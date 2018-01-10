@@ -1,0 +1,22 @@
+{
+    "name": "nishimura/xpcoin-explorer",
+    "description": "eXperience Points Blockchain Explorer",
+    "keywords": ["xpcoin", "blockchain"],
+    "homepage": "https://github.com/nishimura/xpcoin-explorer",
+    "license": "MIT",
+    "authors": [{
+        "name": "Satoshi Nishimura",
+        "email": "nishim314@gmail.com"
+    }],
+
+    "autoload": {
+        "psr-4": { "Xpcoin\\Explorer\\": "src/" }
+        , "files": [ "src/functions.php" ]
+    },
+    "require": {
+        "php": "<7",
+        "ext-db4": "*",
+        "yoya/io_bit": "^2.4",
+        "laiz/laiz-template": "1.2.4"
+    }
+}

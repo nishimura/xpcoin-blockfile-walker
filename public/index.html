@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title><laiz laiz:if="subtitle">{subtitle} : </laiz>{title}</title>
+    {include:inc/head.html}
+  </head>
+
+  <body>
+    {include:inc/header.html}
+
+    <div>
+      <form action="">
+        <input type="text" name="q">
+        <input type="submit">
+      </form>
+    </div>
+
+    <div>
+      <div laiz:if="rows" laiz:loop="rows:row">
+        <div>
+          {row.key:l}
+        </div>
+
+        <div style="padding-left: 16px;">
+          <div laiz:loop="row.values:k:v">
+            {k}: {v:l}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {include:inc/footer.html}
+  </body>
+</html>
