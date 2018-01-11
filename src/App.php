@@ -38,7 +38,7 @@ class App
         $p->blocks = $this->query(
             Xp\DiskBlockIndex::class, packKey('blockindex', $query));
         $p->txs = $this->query(
-            Xp\DiskTx::class, packKey('tx', $query));
+            Xp\DiskTxPos::class, packKey('tx', $query));
 
         //$this->params->subtitle = 'index';
         return $this;

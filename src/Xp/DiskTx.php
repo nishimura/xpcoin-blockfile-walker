@@ -6,6 +6,8 @@ use Xpcoin\Explorer\Uint32base;
 use IO_Bit;
 
 use function Xpcoin\Explorer\toAmount;
+use function Xpcoin\Explorer\walkChunk;
+use function Xpcoin\Explorer\readCompactSize;
 
 class DiskTx
 {
@@ -61,35 +63,36 @@ class DiskTx
         $keyhash = new Uint32base($bs);
 
 
-        return new self($keyhash->toString(), ['foo' => 'bar']);
-
-
-        $chunkBase = [
-            'nVersion'      => [32],
-            'hashNext'     => $uint256a,
-            'nFile'        => [32],
-            'nBlockPos'    => [32],
-            'nHeight'      => [32],
-            'nMint'        => $uint64a,
-            'nMoneySupply' => $uint64a,
-            'nFlags'       => [32],
-            'nStakeModifier' => [32, 32],
-            //'replace' => null, // TODO
-        ];
-
-
-
         $iobit->input($value);
 
         $data = [];
-        foreach ($chunkBase as $name => $chunks){
-            $bs = [];
-            foreach ($chunks as $chunk){
-                $bs[] = $iobit->getUIBits($chunk);
-            }
+        $chunkBase = [
+            'nVersion'  => [32],
+        ];
+        $data += walkChunk($iobit, $chunkBase);
 
-            $data[$name] = new Uint32base($bs);
+        $diskPosBase = [
+            'nFile'     => [32],
+            'nBlockPos' => [32],
+            'nTxPos'    => [32],
+        ];
+
+        $posBase = [];
+        foreach ($diskPosBase as $k => $v)
+            $posBase['pos.' . $k] = $v;
+
+        $data += walkChunk($iobit, $posBase);
+
+        $size = readCompactSize($iobit);
+        $data['vSpent.vector_size'] = $size;
+        for ($i = 0; $i < $size; $i++){
+            $posBase = [];
+            foreach ($diskPosBase as $k => $v)
+                $posBase["vSpent.$i." . $k] = $v;
+
+            $data += walkChunk($iobit, $posBase);
         }
+
         return new self($keyhash->toString(), $data);
     }
 }

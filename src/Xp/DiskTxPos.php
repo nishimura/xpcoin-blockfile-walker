@@ -7,12 +7,13 @@ use IO_Bit;
 
 use function Xpcoin\Explorer\toAmount;
 use function Xpcoin\Explorer\walkChunk;
+use function Xpcoin\Explorer\readCompactSize;
 
-class DiskBlockIndex
+class DiskTxPos
 {
-    const BLOCK_PROOF_OF_STAKE = 1 << 0;
     public $key;
     public $values;
+
     public function __construct($key, $data)
     {
         $this->key = $key;
@@ -38,10 +39,13 @@ class DiskBlockIndex
                 $show = $v->toInt();
                 break;
 
-            case 'nStakeTime':
-            case 'nTime':
-                $show = date('Y-m-d H:i:s', $v->toInt());
-                break;
+            case is_array($v):
+                $show = '';
+                foreach ($v as $_k => $_v){
+                    $show .= "\n index: $_k\n";
+                    foreach ($_v as $__k => $__v)
+                        $show .= sprintf("  %16s: %s\n", $__k, $__v);
+                }
 
             default:
                 break;
@@ -53,56 +57,57 @@ class DiskBlockIndex
         return $ret;
     }
 
+    public function read()
+    {
+        
+    }
+
+    public function readSpents()
+    {
+    }
+
     public static function fromBinary($key, $value)
     {
+        $uint64a = [32, 32];
+
         $iobit = new IO_Bit();
 
         $iobit->input($key);
-        $iobit->getUIBits(11 * 8);
+        $iobit->getUIBits(3 * 8);
         $chunks = [32,32,32,32,32,32,32,32];
         $bs = [];
         foreach ($chunks as $chunk)
             $bs[] = $iobit->getUIBits($chunk);
         $keyhash = new Uint32base($bs);
 
-        $chunkBase = [
-            'nVersion'     => [32],
-            'hashNext'     => [32,32,32,32,32,32,32,32],
-            'nFile'        => [32],
-            'nBlockPos'    => [32],
-            'nHeight'      => [32],
-            'nMint'        => [32, 32],
-            'nMoneySupply' => [32, 32],
-            'nFlags'       => [32],
-            'nStakeModifier' => [32, 32],
-        ];
 
         $iobit->input($value);
 
         $data = [];
-        $data += walkChunk($iobit, $chunkBase);
-
-        if ($data['nFlags']->toInt() & self::BLOCK_PROOF_OF_STAKE){
-            $chunkBase = [
-                'prevoutStake.hash' => [32,32,32,32,32,32,32,32],
-                'prevoutStake.n' => [32],
-                'nStakeTime'   => [32],
-                'hashProofOfStake' => [32,32,32,32,32,32,32,32],
-            ];
-            $data += walkChunk($iobit, $chunkBase);
-        }
-
         $chunkBase = [
-            'nVersion' => [32],
-            'hashPrev' => [32,32,32,32,32,32,32,32],
-            'hashMerkleRoot' => [32,32,32,32,32,32,32,32],
-            'nTime'    => [32],
-            'nBits'    => [32],
-            'nNonce'   => [32],
-            'blockHash' => [32,32,32,32,32,32,32,32],
+            'nVersion'  => [32],
         ];
         $data += walkChunk($iobit, $chunkBase);
 
+        $diskPosBase = [
+            'nFile'     => [32],
+            'nBlockPos' => [32],
+            'nTxPos'    => [32],
+        ];
+
+        $posBase = [];
+        foreach ($diskPosBase as $k => $v)
+            $posBase['pos.' . $k] = $v;
+
+        $data += walkChunk($iobit, $posBase);
+
+        $size = readCompactSize($iobit);
+        $data['vSpent_vector_size'] = $size;
+        $data['vSpent'] = [];
+        for ($i = 0; $i < $size; $i++){
+            $data['vSpent'][$i] = [];
+            $data['vSpent'][$i] += walkChunk($iobit, $diskPosBase);
+        }
 
         return new self($keyhash->toString(), $data);
     }

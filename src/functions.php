@@ -52,3 +52,35 @@ function packKey($key, $suffix = null){
 
     return $ret . $blockbin;
 }
+
+
+function walkChunk($iobit, $chunkBase)
+{
+    $data = [];
+    foreach ($chunkBase as $name => $chunks){
+        $bs = [];
+
+        foreach ($chunks as $chunk){
+            $bs[] = $iobit->getUIBits($chunk);
+        }
+
+        $data[$name] = new Uint32base($bs);
+    }
+    return $data;
+}
+
+// from serialize.h
+function readCompactSize($iobit)
+{
+    $ret = 0;
+    $size = $iobit->getUIBits(8);
+    if ($size < 253)
+        return $size;
+
+    if ($size == 253)
+        return $iobit->getUIBits(16);
+    if ($size == 254)
+        return $iobit->getUIBits(32);
+
+    return $iobit->getUIBits(64);
+}

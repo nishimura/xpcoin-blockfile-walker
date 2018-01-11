@@ -32,7 +32,7 @@ class Db
         $this->cursor = $cursor;
     }
 
-    public function range($prefix, $limit = 3)
+    public function range($prefix, $limit = 10)
     {
         $key = $prefix;
         $value = 0;
