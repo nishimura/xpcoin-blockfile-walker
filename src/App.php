@@ -15,6 +15,7 @@ class App
     private $config;
     private $action;
     private $params;
+    private $db;
 
     public function __construct($dir, $config)
     {
@@ -23,6 +24,8 @@ class App
 
         $this->params = new \stdClass;
         $this->params->title = $this->config['title'];
+
+        $this->db = new Db($this->config['datadir']);
     }
 
     public function run($query = null)
@@ -31,9 +34,11 @@ class App
         $p->query = $query;
 
         // TODO
-        $q = packKey('blockindex', $query);
 
-        $p->rows = $this->query($q);
+        $p->blocks = $this->query(
+            Xp\DiskBlockIndex::class, packKey('blockindex', $query));
+        $p->txs = $this->query(
+            Xp\DiskTx::class, packKey('tx', $query));
 
         //$this->params->subtitle = 'index';
         return $this;
@@ -66,12 +71,12 @@ class App
     }
 
 
-    private function query($query)
+    private function query($cls, $query)
     {
         $ret = [];
-        $db = new Db($this->config['datadir']);
-        foreach ($db->range($query) as $key => $value){
-            $block = Xp\DiskBlockIndex::fromBinary($key, $value);
+        $f = [$cls, 'fromBinary'];
+        foreach ($this->db->range($query) as $key => $value){
+            $block = $f($key, $value);
             $ret[] = $block;
         }
         return $ret;

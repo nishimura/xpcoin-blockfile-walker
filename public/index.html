@@ -7,7 +7,10 @@
   </head>
 
   <body>
-    {include:inc/header.html}
+    <h1>
+      <span laiz:if="subtitle">{subtitle} : </span>{title}
+    </h1>
+    <hr>
 
     <div>
       <form action="">
@@ -17,19 +20,25 @@
     </div>
 
     <div>
-      <div laiz:if="rows" laiz:loop="rows:row">
+      <div laiz:if="blocks" laiz:loop="blocks:block">
         <div>
-          {row.key:l}
+          {block.key:l}
         </div>
 
         <div style="padding-left: 16px;">
-          <div laiz:loop="row.values:k:v">
-            {k}: {v:l}
-          </div>
+          <table>
+            <tr laiz:loop="block.values:k:v">
+              <th>{k} &nbsp;</th>
+              <td>{v:l}</td>
+            </tr>
+          </table>
         </div>
       </div>
     </div>
 
-    {include:inc/footer.html}
+    <hr>
+    <div>
+      &copy; 2018 nish#8932
+    </div>
   </body>
 </html>

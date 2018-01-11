@@ -32,14 +32,14 @@ class Db
         $this->cursor = $cursor;
     }
 
-    public function range($prefix)
+    public function range($prefix, $limit = 3)
     {
         $key = $prefix;
         $value = 0;
 
         $ret = $this->cursor->get($key, $value, DB_SET_RANGE);
-        $i = 0; // limit
-        while ($ret == 0){
+        $i = 0;
+        while ($ret == 0 && $i < $limit){
             if (!startsWith($key, $prefix)){
                 break;
             }
@@ -49,7 +49,6 @@ class Db
             $ret = $this->cursor->get($key, $value, DB_NEXT);
 
             $i++;
-            if ($i > 3) break;
         }
     }
 
