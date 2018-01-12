@@ -35,8 +35,16 @@ class Tx
             switch ($k){
 
             case 'vin':
-                if (!is_array($v)) // coinbase
+                if (!isset($v[0])){
+                    $show = "\n";
+                    // coinbase
+                    foreach ($v as $_k => $_v){
+                        $show .= sprintf("  %16s: %s\n",
+                                         $_k,
+                                         $_v);
+                    }
                     break;
+                }
 
                 $show = "\n";
                 foreach ($v as $_k => $_v){
