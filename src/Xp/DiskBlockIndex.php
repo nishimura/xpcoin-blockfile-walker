@@ -18,6 +18,9 @@ class DiskBlockIndex
         $this->key = $key;
         foreach ($data as $k => $v)
             $this->values[$k] = $v;
+
+        $this->values['details'] = $this->read();
+
     }
 
     public function __toString() { return $this->toString(); }
@@ -46,12 +49,25 @@ class DiskBlockIndex
             default:
                 break;
             }
-            $ret .= sprintf("  %14s: %s\n", $k, $show);
+            if ($k == 'details')
+                $ret .= sprintf("  ===== %s =====:\n%s\n", $k, $show);
+            else
+                $ret .= sprintf("  %14s: %s\n", $k, $show);
         }
         $ret .= "\n";
 
         return $ret;
     }
+
+    public function read()
+    {
+        $pos = [
+            $this->values['nFile']->toInt(),
+            $this->values['nBlockPos']->toInt(),
+        ];
+        return Block::fromBinary($pos);
+    }
+
 
     public static function fromBinary($key, $value)
     {

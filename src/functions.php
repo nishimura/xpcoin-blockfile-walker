@@ -133,7 +133,7 @@ function readCompactSizeRaw($fp)
     return ord(freed($fp, 8));
 }
 
-function readScriptRaw($fp)
+function readVcharRaw($fp)
 {
     $size = readCompactSizeRaw($fp);
     $ret = '';

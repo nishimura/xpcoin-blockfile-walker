@@ -19,6 +19,8 @@ class DiskTxPos
         $this->key = $key;
         foreach ($data as $k => $v)
             $this->values[$k] = $v;
+
+        $this->values['details'] = $this->read();
     }
 
     public function __toString() { return $this->toString(); }
@@ -32,11 +34,8 @@ class DiskTxPos
             switch ($k){
             case 'pos.nBlockPos':
             case 'pos.nTxPos':
-                continue 2;
             case 'pos.nFile':
-                $tx = $this->read();
-                $show = "\n" . $tx;
-                $k = "raw";
+                continue 2;
                 break;
 
             case 'nMint':
@@ -59,7 +58,10 @@ class DiskTxPos
             default:
                 break;
             }
-            $ret .= sprintf("  %14s: %s\n", $k, $show);
+            if ($k == 'details')
+                $ret .= sprintf("  ===== %s =====:\n%s\n", $k, $show);
+            else
+                $ret .= sprintf("  %14s: %s\n", $k, $show);
 
         }
         $ret .= "\n";

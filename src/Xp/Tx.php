@@ -2,16 +2,13 @@
 
 namespace Xpcoin\BlockFileWalker\Xp;
 
-use Xpcoin\BlockFileWalker\Uint32base;
-use IO_Bit;
-
 use Xpcoin\BlockFileWalker\App;
 use Xpcoin\BlockFileWalker\Script;
 
 use function Xpcoin\BlockFileWalker\toAmount;
 use function Xpcoin\BlockFileWalker\walkChunkRaw;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
-use function Xpcoin\BlockFileWalker\readScriptRaw;
+use function Xpcoin\BlockFileWalker\readVcharRaw;
 use function Xpcoin\BlockFileWalker\raw256toHexStr;
 
 class Tx
@@ -88,7 +85,10 @@ class Tx
             default:
                 break;
             }
-            $ret .= sprintf("  %14s: %s\n", $k, $show);
+            if ($k == 'txid')
+                $ret .= sprintf("  %s: %s\n", $k, $show);
+            else
+                $ret .= sprintf("  %14s: %s\n", $k, $show);
         }
         $ret .= "\n";
 
@@ -117,6 +117,14 @@ class Tx
         $fp = fopen($file, 'rb');
         fseek($fp, $nTxPos);
 
+        $ret = self::readFp($fp);
+        fclose($fp);
+        return $ret;
+    }
+
+    public static function readFp($fp)
+    {
+        $start = ftell($fp);
         $data = [];
 
         $chunkBase = [
@@ -135,7 +143,7 @@ class Tx
             $data['vin'][$i] = [];
             $data['vin'][$i] += walkChunkRaw($fp, $inBase);
 
-            $data['vin'][$i]['scriptSig'] = new Script(readScriptRaw($fp));
+            $data['vin'][$i]['scriptSig'] = new Script(readVcharRaw($fp));
             $data['vin'][$i]['nSequence'] = unpack('V', fread($fp, 4))[1];
         }
 
@@ -159,7 +167,7 @@ class Tx
             $data['vout'][$i] = [];
             $data['vout'][$i] += walkChunkRaw($fp, $outBase);
 
-            $data['vout'][$i]['scriptPubKey'] = new Script(readScriptRaw($fp));
+            $data['vout'][$i]['scriptPubKey'] = new Script(readVcharRaw($fp));
         }
 
         $chunkBase = [
@@ -167,7 +175,19 @@ class Tx
         ];
         $data['nLockTime'] = unpack('V', fread($fp, 4))[1];
 
-        fclose($fp);
+        $end = ftell($fp);
+
+        fseek($fp, $start);
+        $bin = fread($fp, $end - $start);
+        $hash = hash('sha256', $bin, true);
+        $hash = hash('sha256', $hash, true);
+
+        $hash = strrev($hash);
+        $renew = [
+            'txid' => bin2hex($hash)
+        ];
+        $data = $renew + $data;
+
         return new self($data);
     }
 }
