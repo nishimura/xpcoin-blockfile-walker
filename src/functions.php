@@ -69,6 +69,27 @@ function walkChunk($iobit, $chunkBase)
     return $data;
 }
 
+// TODO: refactoring $iobit $fp interface
+function walkChunkRaw($fp, $chunkBase)
+{
+    $label = [
+        4 => 'V',
+        8 => 'P',
+    ];
+    $data = [];
+    foreach ($chunkBase as $name => $chunks){
+        $bs = [];
+
+        foreach ($chunks as $chunk){
+            $byte = $chunk/8;
+            $bs[] = unpack($label[$byte], fread($fp, $byte))[1];
+        }
+
+        $data[$name] = $bs;
+    }
+    return $data;
+}
+
 // from serialize.h
 function readCompactSize($iobit)
 {
@@ -83,4 +104,30 @@ function readCompactSize($iobit)
         return $iobit->getUIBits(32);
 
     return $iobit->getUIBits(64);
+}
+
+function readCompactSizeRaw($fp)
+{
+    $ret = 0;
+    $size = fread($fp, 1);
+    $size = ord($size);
+    if ($size < 253)
+        return $size;
+
+    if ($size == 253)
+        return ord(fread($fp, 2));
+    if ($size == 254)
+        return ord(freed($fp, 4));
+
+    return ord(freed($fp, 8));
+}
+
+function readScriptRaw($fp)
+{
+    $size = readCompactSizeRaw($fp);
+    $ret = '';
+    for ($i = 0; $i < $size; $i++){
+        $ret .= bin2hex(fread($fp, 1));
+    }
+    return $ret;
 }

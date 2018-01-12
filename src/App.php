@@ -6,14 +6,10 @@ use Laiz\Template\Parser;
 
 class App
 {
-    const ACTION_INDEX = 'index';
-    const ACTION_TX = 'tx';
-    const ACTION_BLOCK = 'block';
-    const ACTION_SEARCH = 'search';
+    public static $datadir;
 
     private $rootdir;
     private $config;
-    private $action;
     private $params;
     private $db;
 
@@ -26,6 +22,8 @@ class App
         $this->params->title = $this->config['title'];
 
         $this->db = new Db($this->config['datadir']);
+
+        self::$datadir = $config['datadir'];
     }
 
     public function run($query = null)
@@ -33,14 +31,11 @@ class App
         $p = $this->params;
         $p->query = $query;
 
-        // TODO
-
         $p->blocks = $this->query(
             Xp\DiskBlockIndex::class, packKey('blockindex', $query));
         $p->txs = $this->query(
             Xp\DiskTxPos::class, packKey('tx', $query));
 
-        //$this->params->subtitle = 'index';
         return $this;
     }
 
@@ -51,23 +46,11 @@ class App
 
     public function show($public, $cache)
     {
-        switch ($this->action){
-        case self::ACTION_TX:
-        case self::ACTION_BLOCK:
-        case self::ACTION_SEARCH:
-            $file = $this->action . '.html';
-
-        case self::ACTION_INDEX:
-        default:
-            $file = self::ACTION_INDEX . '.html';
-            break;
-        }
-
         $tmpl = new Parser($public, $cache);
         $tmpl->addBehavior('l',
                            'Xpcoin\Explorer\Presenter\Filter::toHashLink',
                            true);
-        $tmpl->setFile($file)->show($this->params);
+        $tmpl->setFile('index.html')->show($this->params);
     }
 
 
