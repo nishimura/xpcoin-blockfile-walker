@@ -6,11 +6,13 @@ use Xpcoin\Explorer\Uint32base;
 use IO_Bit;
 
 use Xpcoin\Explorer\App;
+use Xpcoin\Explorer\Script;
 
 use function Xpcoin\Explorer\toAmount;
 use function Xpcoin\Explorer\walkChunkRaw;
 use function Xpcoin\Explorer\readCompactSizeRaw;
 use function Xpcoin\Explorer\readScriptRaw;
+use function Xpcoin\Explorer\raw256toHexStr;
 
 class Tx
 {
@@ -33,49 +35,50 @@ class Tx
             switch ($k){
 
             case 'vin':
+                if (!is_array($v)) // coinbase
+                    break;
+
+                $show = "\n";
+                foreach ($v as $_k => $_v){
+                    $show .= "$k: $_k\n";
+                    $show .= sprintf("  %16s: %s\n",
+                                     'prevout.hash',
+                                     raw256toHexStr($_v['prevout.hash']));
+                    foreach (['prevout.n', 'scriptSig', 'nSequence'] as $__k){
+                        $show .= sprintf("  %16s: %s\n",
+                                         $__k,
+                                         $_v[$__k]);
+                    }
+                }
+                break;
+
             case 'vout':
                 $show = "\n";
                 foreach ($v as $_k => $_v){
-                    // TODO: refactoring
-                    if (is_array($_v)){
-                        $show .= "$k: $_k\n";
-                        foreach ($_v as $__k => $__v){
-                            if ($__k == 'nValue'){
-                                $__v = toAmount($__v[0]);
-                            }else if ($__k == 'prevout.hash'){
-                                $x16 = '';
-                                foreach ($__v as $___v){
-                                    $x16 = dechex($___v) . $x16;
-                                }
-                                $__v = $x16;
-                            }else if ($__k == 'prevout.n'){
-                                $__v = $__v[0];
-                            }else{
-                                // not implements
-                                //
-                            }
-                            $show .= sprintf("  %16s: %s\n", $__k, $__v);
-                        }
-                    }else{
-                        $show .= "$_k: $_v\n";
+                    $show .= sprintf("  %16s: %s\n",
+                                     'nValue',
+                                     toAmount($_v['nValue']));
+                    $show .= sprintf("  %16s: %s\n",
+                                     'scriptPubKey',
+                                     $_v['scriptPubKey']);
+                    list($t, $ds) = $_v['scriptPubKey']->extractDestinations();
+                    $show .= sprintf("  %16s: %s\n",
+                                     'addresses',
+                                     $t);
+
+                    foreach ($ds as $d){
+                        $show .= sprintf("%20s%s\n", '', $d);
                     }
                 }
                 break;
 
             case 'nTime':
             case 'nLockTime':
-                $show = date('Y-m-d H:i:s', $v[0]);
-                break;
-
-            case is_array($v) && count($v) == 1:
-                $show = $v[0];
+                $show = date('Y-m-d H:i:s', $v);
                 break;
 
             default:
                 break;
-            }
-            if (is_array($show)){
-                var_dump($k, $v);exit;
             }
             $ret .= sprintf("  %14s: %s\n", $k, $show);
         }
@@ -124,8 +127,8 @@ class Tx
             $data['vin'][$i] = [];
             $data['vin'][$i] += walkChunkRaw($fp, $inBase);
 
-            $data['vin'][$i]['scriptSig'] = readScriptRaw($fp);
-            $data['vin'][$i]['nSequence'] = ord(fread($fp, 4));
+            $data['vin'][$i]['scriptSig'] = new Script(readScriptRaw($fp));
+            $data['vin'][$i]['nSequence'] = unpack('V', fread($fp, 4))[1];
         }
 
         $isCoinbase = self::isCoinbase($data['vin']);
@@ -135,7 +138,7 @@ class Tx
             $data['vin']['nSequence'] = $data['vin'][0]['nSequence'];
             unset($data['vin'][0]);
         }else{
-            // TODO
+            // TODO: asm
         }
 
 
@@ -148,7 +151,7 @@ class Tx
             $data['vout'][$i] = [];
             $data['vout'][$i] += walkChunkRaw($fp, $outBase);
 
-            $data['vout'][$i]['scriptPubKey'] = readScriptRaw($fp);
+            $data['vout'][$i]['scriptPubKey'] = new Script(readScriptRaw($fp));
         }
 
         $chunkBase = [

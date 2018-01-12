@@ -32,7 +32,7 @@ class DiskTxPos
             switch ($k){
             case 'pos.nBlockPos':
             case 'pos.nTxPos':
-                continue;
+                continue 2;
             case 'pos.nFile':
                 $tx = $this->read();
                 $show = "\n" . $tx;

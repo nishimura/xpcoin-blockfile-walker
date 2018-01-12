@@ -17,6 +17,7 @@
         "php": "<7",
         "ext-db4": "*",
         "yoya/io_bit": "^2.4",
+        "stephenhill/base58": "*",
         "laiz/laiz-template": "1.2.4"
     }
 }

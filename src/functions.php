@@ -53,6 +53,14 @@ function packKey($key, $suffix = null){
     return $ret . $blockbin;
 }
 
+function raw256toHexStr($arr)
+{
+    $x16 = '';
+    foreach ($arr as $v){
+        $x16 = dechex($v) . $x16;
+    }
+    return $x16;
+}
 
 function walkChunk($iobit, $chunkBase)
 {
@@ -84,6 +92,9 @@ function walkChunkRaw($fp, $chunkBase)
             $byte = $chunk/8;
             $bs[] = unpack($label[$byte], fread($fp, $byte))[1];
         }
+
+        if (count($chunks) == 1)
+            $bs = $bs[0];
 
         $data[$name] = $bs;
     }
@@ -127,7 +138,7 @@ function readScriptRaw($fp)
     $size = readCompactSizeRaw($fp);
     $ret = '';
     for ($i = 0; $i < $size; $i++){
-        $ret .= bin2hex(fread($fp, 1));
+        $ret .= fread($fp, 1);
     }
     return $ret;
 }
