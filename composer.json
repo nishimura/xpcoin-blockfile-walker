@@ -1,8 +1,8 @@
 {
-    "name": "nishimura/xpcoin-explorer",
-    "description": "eXperience Points Blockchain Explorer",
+    "name": "nishimura/xpcoin-blockfile-walker",
+    "description": "eXperience Points Blockchain Data File Viewer",
     "keywords": ["xpcoin", "blockchain"],
-    "homepage": "https://github.com/nishimura/xpcoin-explorer",
+    "homepage": "https://github.com/nishimura/xpcoin-blockfile-walker",
     "license": "MIT",
     "authors": [{
         "name": "Satoshi Nishimura",
@@ -10,7 +10,7 @@
     }],
 
     "autoload": {
-        "psr-4": { "Xpcoin\\Explorer\\": "src/" }
+        "psr-4": { "Xpcoin\\BlockFileWalker\\": "src/" }
         , "files": [ "src/functions.php" ]
     },
     "require": {

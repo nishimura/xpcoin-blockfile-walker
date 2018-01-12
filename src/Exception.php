@@ -1,5 +1,5 @@
 <?php
 
-namespace Xpcoin\Explorer;
+namespace Xpcoin\BlockFileWalker;
 
 class Exception extends \Exception {}

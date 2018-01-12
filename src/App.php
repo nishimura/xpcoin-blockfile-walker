@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpcoin\Explorer;
+namespace Xpcoin\BlockFileWalker;
 
 use Laiz\Template\Parser;
 
@@ -19,7 +19,6 @@ class App
         $this->config = $config;
 
         $this->params = new \stdClass;
-        $this->params->title = $this->config['title'];
 
         $this->db = new Db($this->config['datadir']);
 
@@ -48,7 +47,7 @@ class App
     {
         $tmpl = new Parser($public, $cache);
         $tmpl->addBehavior('l',
-                           'Xpcoin\Explorer\Presenter\Filter::toHashLink',
+                           'Xpcoin\BlockFileWalker\Presenter\Filter::toHashLink',
                            true);
         $tmpl->setFile('index.html')->show($this->params);
     }

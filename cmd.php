@@ -11,7 +11,7 @@ $q = null;
 if (isset($argv[1]))
     $q = $argv[1];
 
-$app = new Xpcoin\Explorer\App($dir, $config);
+$app = new Xpcoin\BlockFileWalker\App($dir, $config);
 
 $params = $app->run($q)->getParams();
 foreach ($params as $k => $v){

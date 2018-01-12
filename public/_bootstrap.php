@@ -11,5 +11,5 @@ $q = null;
 if (isset($_GET['q']))
     $q = $_GET['q'];
 
-$app = new Xpcoin\Explorer\App($dir, $config);
+$app = new Xpcoin\BlockFileWalker\App($dir, $config);
 $app->run($q)->show('public', 'cache');

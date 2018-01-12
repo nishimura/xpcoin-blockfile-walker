@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpcoin\Explorer;
+namespace Xpcoin\BlockFileWalker;
 
 function startsWith($haystack, $needle){
     return (strpos($haystack, $needle) === 0);

@@ -1,18 +1,18 @@
 <?php
 
-namespace Xpcoin\Explorer\Xp;
+namespace Xpcoin\BlockFileWalker\Xp;
 
-use Xpcoin\Explorer\Uint32base;
+use Xpcoin\BlockFileWalker\Uint32base;
 use IO_Bit;
 
-use Xpcoin\Explorer\App;
-use Xpcoin\Explorer\Script;
+use Xpcoin\BlockFileWalker\App;
+use Xpcoin\BlockFileWalker\Script;
 
-use function Xpcoin\Explorer\toAmount;
-use function Xpcoin\Explorer\walkChunkRaw;
-use function Xpcoin\Explorer\readCompactSizeRaw;
-use function Xpcoin\Explorer\readScriptRaw;
-use function Xpcoin\Explorer\raw256toHexStr;
+use function Xpcoin\BlockFileWalker\toAmount;
+use function Xpcoin\BlockFileWalker\walkChunkRaw;
+use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
+use function Xpcoin\BlockFileWalker\readScriptRaw;
+use function Xpcoin\BlockFileWalker\raw256toHexStr;
 
 class Tx
 {

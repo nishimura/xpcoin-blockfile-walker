@@ -1,13 +1,13 @@
 <?php
 
-namespace Xpcoin\Explorer\Xp;
+namespace Xpcoin\BlockFileWalker\Xp;
 
-use Xpcoin\Explorer\Uint32base;
+use Xpcoin\BlockFileWalker\Uint32base;
 use IO_Bit;
 
-use function Xpcoin\Explorer\toAmount;
-use function Xpcoin\Explorer\walkChunk;
-use function Xpcoin\Explorer\readCompactSize;
+use function Xpcoin\BlockFileWalker\toAmount;
+use function Xpcoin\BlockFileWalker\walkChunk;
+use function Xpcoin\BlockFileWalker\readCompactSize;
 
 class DiskTxPos
 {

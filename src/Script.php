@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpcoin\Explorer;
+namespace Xpcoin\BlockFileWalker;
 
 class Script
 {

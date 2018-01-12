@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpcoin\Explorer\Presenter;
+namespace Xpcoin\BlockFileWalker\Presenter;
 
 class Filter
 {
