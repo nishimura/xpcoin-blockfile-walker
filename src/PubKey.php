@@ -9,9 +9,11 @@ class PubKey
     const PUBKEY_ADDRESS = 75;
 
     private $bin;
-    public function __construct($bin)
+    private $isHash;
+    public function __construct($bin, $isHash = false)
     {
         $this->bin = $bin;
+        $this->isHash = $isHash;
     }
 
     public function getId($raw = true)
@@ -21,10 +23,10 @@ class PubKey
 
     public function __toString()
     {
-        return self::binToAddress($this->bin);
+        return self::binToAddress($this->bin, $this->isHash);
     }
 
-    public static function binToId($bin)
+    public static function binToKeyId($bin)
     {
         // Hash160
         $bin = hash('sha256', $bin, true);
@@ -32,9 +34,10 @@ class PubKey
         return $bin;
     }
 
-    public static function binToAddress($bin)
+    public static function binToAddress($bin, $hash = false)
     {
-        $bin = self::binToId($bin);
+        if (!$hash)
+            $bin = self::binToKeyId($bin);
         $bin = pack('C', self::PUBKEY_ADDRESS) . $bin;
 
         $checksum = hash('sha256', $bin, true);

@@ -4,9 +4,12 @@ namespace Xpcoin\BlockFileWalker\Xp;
 
 use Xpcoin\BlockFileWalker\Uint32base;
 use IO_Bit;
+use Xpcoin\BlockFileWalker\Presenter;
 
-use function Xpcoin\BlockFileWalker\toAmount;
-use function Xpcoin\BlockFileWalker\walkChunk;
+use function Xpcoin\BlockFileWalker\packStr;
+use function Xpcoin\BlockFileWalker\readStr;
+use function Xpcoin\BlockFileWalker\readStrRev;
+use function Xpcoin\BlockFileWalker\toInt;
 
 class DiskBlockIndex
 {
@@ -16,54 +19,32 @@ class DiskBlockIndex
     public function __construct($key, $data)
     {
         $this->key = $key;
-        foreach ($data as $k => $v)
-            $this->values[$k] = $v;
+        $this->values = $data;
 
         $this->values['details'] = $this->read();
 
     }
 
+    public static function getPresenter(DiskBlockIndex $obj)
+    {
+        return new Presenter\BlockIndex($obj);
+    }
+    public function toPresenter()
+    {
+        return self::getPresenter($this);
+    }
+
     public function __toString() { return $this->toString(); }
     public function toString()
     {
-        $ret = '';
-        $ret .= "key: $this->key\n";
-
-        foreach ($this->values as $k => $v){
-            $show = $v;
-            switch ($k){
-            case 'nMint':
-                $show = toAmount($v->toInt());
-                break;
-
-            case 'nHeight':
-            case 'nVersion':
-                $show = $v->toInt();
-                break;
-
-            case 'nStakeTime':
-            case 'nTime':
-                $show = date('Y-m-d H:i:s', $v->toInt());
-                break;
-
-            default:
-                break;
-            }
-            if ($k == 'details')
-                $ret .= sprintf("  ===== %s =====:\n%s\n", $k, $show);
-            else
-                $ret .= sprintf("  %14s: %s\n", $k, $show);
-        }
-        $ret .= "\n";
-
-        return $ret;
+        return $this->toPresenter()->toString();
     }
 
     public function read()
     {
         $pos = [
-            $this->values['nFile']->toInt(),
-            $this->values['nBlockPos']->toInt(),
+            toInt($this->values['nFile']),
+            toInt($this->values['nBlockPos']),
         ];
         return Block::fromBinary($pos);
     }
@@ -71,55 +52,55 @@ class DiskBlockIndex
 
     public static function fromBinary($key, $value)
     {
-        $iobit = new IO_Bit();
+        $prelen = strlen(packStr('blockindex'));
+        readStr($key, $prelen);
 
-        $iobit->input($key);
-        $iobit->getUIBits(11 * 8);
-        $chunks = [32,32,32,32,32,32,32,32];
-        $bs = [];
-        foreach ($chunks as $chunk)
-            $bs[] = $iobit->getUIBits($chunk);
-        $keyhash = new Uint32base($bs);
+        $keybin = readStrRev($key, 32);
+        $data = [];
 
-        $chunkBase = [
-            'nVersion'     => [32],
-            'hashNext'     => [32,32,32,32,32,32,32,32],
-            'nFile'        => [32],
-            'nBlockPos'    => [32],
-            'nHeight'      => [32],
-            'nMint'        => [32, 32],
-            'nMoneySupply' => [32, 32],
-            'nFlags'       => [32],
-            'nStakeModifier' => [32, 32],
+        $chunks = [
+            'serVersion'   => 4,
+            'hashNext'     => 32,
+            'nFile'        => 4,
+            'nBlockPos'    => 4,
+            'nHeight'      => 4,
+            'nMint'        => 8,
+            'nMoneySupply' => 8,
+            'nFlags'       => 4,
+            'nStakeModifier' => 8,
         ];
 
-        $iobit->input($value);
-
-        $data = [];
-        $data += walkChunk($iobit, $chunkBase);
-
-        if ($data['nFlags']->toInt() & self::BLOCK_PROOF_OF_STAKE){
-            $chunkBase = [
-                'prevoutStake.hash' => [32,32,32,32,32,32,32,32],
-                'prevoutStake.n' => [32],
-                'nStakeTime'   => [32],
-                'hashProofOfStake' => [32,32,32,32,32,32,32,32],
-            ];
-            $data += walkChunk($iobit, $chunkBase);
+        foreach ($chunks as $k => $byte){
+            $data[$k] = readStrRev($value, $byte);
         }
 
-        $chunkBase = [
-            'nVersion' => [32],
-            'hashPrev' => [32,32,32,32,32,32,32,32],
-            'hashMerkleRoot' => [32,32,32,32,32,32,32,32],
-            'nTime'    => [32],
-            'nBits'    => [32],
-            'nNonce'   => [32],
-            'blockHash' => [32,32,32,32,32,32,32,32],
+        if (toInt($data['nFlags']) & self::BLOCK_PROOF_OF_STAKE){
+            $chunks = [
+                'prevoutStake.hash' => 32,
+                'prevoutStake.n' => 4,
+                'nStakeTime'   => 4,
+                'hashProofOfStake' => 32,
+            ];
+            foreach ($chunks as $k => $byte){
+                $data[$k] = readStrRev($value, $byte);
+            }
+        }
+
+        $chunks = [
+            'nVersion' => 4,
+            'hashPrev' => 32,
+            'hashMerkleRoot' => 32,
+            'nTime'    => 4,
+            'nBits'    => 4,
+            'nNonce'   => 4,
+            'blockHash' => 32,
         ];
-        $data += walkChunk($iobit, $chunkBase);
 
+        foreach ($chunks as $k => $byte){
+            $data[$k] = readStrRev($value, $byte);
+        }
+        //var_dump(bin2hex(strrev($data['nNonce'])));exit;
 
-        return new self($keyhash->toString(), $data);
+        return new self($keybin, $data);
     }
 }

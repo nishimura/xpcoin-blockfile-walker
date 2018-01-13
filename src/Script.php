@@ -66,27 +66,59 @@ class Script
         $this->bin = $bin;
     }
 
-    public function toHex()
+    public function extractFromAddresses()
     {
+        // TODO: How to do it?
+        return [];
+
+
+
         $len = strlen($this->bin);
-        $ret = '';
-        for ($i = 0; $i < $len; $i++){
-            $ret .= bin2hex($this->bin[$i]);
+        for ($i = 0; $i < $len;){
+            list($op, $i, $ch) = $this->getOp($i);
+            if ($op == self::OP_INVALIDOPCODE)
+                break;
+
+            $parts = explode(' ', $ch);
+
+            $len = count($parts);
+            if ($len < 2)
+                break;
+
+            $ret = [];
+            for ($i = 1; $i < $len; $i++){
+                if (strlen($parts[$i]) != 33 &&
+                    strlen($parts[$i]) != 20)
+                    // TODO: other any patterns
+                    break;
+
+                $ret[] = new PubKey($parts[$i]);
+            }
+
+            return $ret;
         }
-        return $ret;
+
+        return [];
     }
 
+    public function toHex()
+    {
+        return bin2hex($this->bin);
+    }
+
+    public function toString() { return $this->toHex(); }
     public function __toString() { return $this->toHex(); }
 
     public function extractDestinations()
     {
         $ret = null;
         list($type, $ret) = $this->solver();
-        if ($type === false)
+        if ($type == self::TX_NONSTANDARD)
             return [$type, $ret];
 
         switch ($type){
         case self::TX_PUBKEY:
+        case self::TX_PUBKEYHASH:
             $ret = $this->extractDestination();
             break;
 
@@ -104,6 +136,8 @@ class Script
         list($type, $ret) = $this->solver();
         if ($type == self::TX_PUBKEY){
             return [new PubKey($ret[0])];
+        }else if ($type == self::TX_PUBKEYHASH){
+            return [new PubKey($ret[0], true)];
         }
 
         return null;
@@ -111,25 +145,43 @@ class Script
 
     private function solver()
     {
-        $type = self::TX_NONSTANDARD;
         $len = strlen($this->bin);
-        $ret = [];
         foreach (self::TXOP_MAP as $tx => $ops){
+            $i = 0;
             $j = 0;
-            for ($i = 0; $i < $len;){
+            $ret = [];
+            $type = self::TX_NONSTANDARD;
+            for (;;){
+                if ($j >= count($ops) && $i >= $len){
+                    return [$type, $ret];
+                }
                 list($op, $i, $ch) = $this->getOp($i);
                 if ($op == self::OP_INVALIDOPCODE)
-                    continue 2;
+                    break;
 
                 if ($ops[$j] == self::OP_PUBKEYS){
-                    // TODO:
+                    while (strlen($ch) >= 33 && strlen($ch) <= 120){
+                        $type = self::TX_MULTISIG;
+                        $ret[] = $ch;
+                        list($op, $i, $ch) = $this->getOp($i);
+                        if ($op == self::OP_INVALIDOPCODE)
+                            break;
+                    }
+                    $j++;
+                    if (!isset($ops[$j]))
+                        break;
                 }
                 if ($ops[$j] == self::OP_PUBKEY){
+                    if (strlen($ch) < 33 || strlen($ch) > 120)
+                        break;
                     $type = self::TX_PUBKEY;
                     $ret[] = $ch;
                 }
                 else if ($ops[$j] == self::OP_PUBKEYHASH){
-                    // TODO
+                    if (strlen($ch) !== 20)
+                        break;
+                    $type = self::TX_PUBKEYHASH;
+                    $ret[] = $ch;
                 }
                 else if ($ops[$j] == self::OP_SMALLINTEGER){
                     // TODO
@@ -137,25 +189,26 @@ class Script
                 else if ($ops[$j] == self::OP_SMALLDATA){
                     // TODO
                 }
-                else if (/* TODO */ 1){
+                else if ($op != $ops[$j]){
                     break;
                 }
                 $j++;
             }
         }
 
-        return [$type, $ret];
+        return [self::TX_NONSTANDARD, []];
     }
 
-    private function getOp($i)
+    private function getOp($i, $bin = null)
     {
-        $bin = $this->bin;
+        if ($bin === null)
+            $bin = $this->bin;
 
         $len = strlen($bin);
         if ($len == 0)
-            return [self::OP_INVALIDOPCODE, 0];
+            return [self::OP_INVALIDOPCODE, 0, ''];
         if ($len <= $i)
-            return [self::OP_INVALIDOPCODE, 0];
+            return [self::OP_INVALIDOPCODE, 0, ''];
 
         $ch = '';
         $op = ord($bin[$i++]);

@@ -6,9 +6,9 @@ function startsWith($haystack, $needle){
     return (strpos($haystack, $needle) === 0);
 }
 
-function toAmount($base)
+function toAmount($bin)
 {
-    return $base / 1000000;
+    return toInt($bin) / 1000000;
 }
 
 function reverse8($str){
@@ -19,38 +19,31 @@ function packStr($str){
     return pack('C', strlen($str)) . $str;
 }
 
-function pack8Str($str){
-    $len = strlen($str);
-    $pad = $len % 2;
-    $str = str_pad($str, $len + $pad, '0', STR_PAD_LEFT);
-    $ret = reverse8($str);
-    return $ret;
-}
-
 function packKey($key, $suffix = null){
     $ret = packStr($key);
 
     if ($suffix === null)
         return $ret;
 
-    $len = strlen($ret);
+    if (strlen($suffix) % 2 == 1)
+        $suffix = '0' . $suffix;
+    return $ret . strrev(hex2bin($suffix));
+}
 
-    // TODO: refactoring
-    $blocklen = 0;
-    $block = $suffix;
-    $block = pack8str($block);
-    $blocklen = strlen($block);
-    $pad = $blocklen % 8;
-    $block = str_pad($block, $blocklen + (8 - $pad) % 8, '0');
-    $int32s = str_split($block, 8);
-    foreach ($int32s as $k => $v)
-        $int32s[$k] = intval($v, 16);
-
-    $blockbin = pack(str_repeat('N', count($int32s)), ...$int32s);
-    $blockbin = substr($blockbin, 0, $blocklen / 2);
+function readStr(&$str, $byte)
+{
+    $ret = substr($str, 0, $byte);
+    $str = substr($str, $byte);
+    return $ret;
+}
+function readStrRev(&$str, $byte){
+    return strrev(readStr($str, $byte));
+}
 
 
-    return $ret . $blockbin;
+function toInt($bin)
+{
+    return intval(bin2hex($bin), 16);
 }
 
 function raw256toHexStr($arr)
@@ -102,19 +95,19 @@ function walkChunkRaw($fp, $chunkBase)
 }
 
 // from serialize.h
-function readCompactSize($iobit)
+function readCompactSize(&$str)
 {
     $ret = 0;
-    $size = $iobit->getUIBits(8);
+    $size = ord(readStrRev($str, 1));
     if ($size < 253)
         return $size;
 
     if ($size == 253)
-        return $iobit->getUIBits(16);
+        return hexdec(bin2hex(readStrRev($str, 2)));
     if ($size == 254)
-        return $iobit->getUIBits(32);
+        return hexdec(bin2hex(readStrRev($str, 4)));
 
-    return $iobit->getUIBits(64);
+    return hexdec(bin2hex(readStrRev($str, 8)));
 }
 
 function readCompactSizeRaw($fp)
@@ -133,12 +126,10 @@ function readCompactSizeRaw($fp)
     return ord(freed($fp, 8));
 }
 
-function readVcharRaw($fp)
+function readFpVector($fp)
 {
     $size = readCompactSizeRaw($fp);
-    $ret = '';
-    for ($i = 0; $i < $size; $i++){
-        $ret .= fread($fp, 1);
-    }
-    return $ret;
+    if ($size <= 0)
+        return '';
+    return fread($fp, $size);
 }
