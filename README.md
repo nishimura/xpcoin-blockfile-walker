@@ -51,3 +51,5 @@ php5.6 cmd.php [<hash>]
 ```
 php5.6 -S 160.16.242.86:8989 public/_bootstrap.php 
 ```
+
+Needs writable cache directory and xp data directory.
