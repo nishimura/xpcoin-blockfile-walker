@@ -43,13 +43,16 @@ class App
         return $this->params;
     }
 
-    public function show($public, $cache)
+    public function show($public, $cache, $params = null)
     {
+        if ($params === null)
+            $params = $this->params;
+
         $tmpl = new Parser($public, $cache);
         $tmpl->addBehavior('l',
                            'Xpcoin\BlockFileWalker\Presenter\Filter::toHashLink',
                            true);
-        $tmpl->setFile('index.html')->show($this->params);
+        $tmpl->setFile('index.html')->show($params);
     }
 
 
