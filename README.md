@@ -49,7 +49,7 @@ php5.6 cmd.php [<hash>]
 ### WEB
 
 ```
-php5.6 -S 160.16.242.86:8989 public/_bootstrap.php 
+php5.6 -S localhost:8989 public/_bootstrap.php 
 ```
 
 Needs writable cache directory and xp data directory.
