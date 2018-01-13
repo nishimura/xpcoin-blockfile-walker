@@ -1,6 +1,7 @@
 <?php
 
 use function Xpcoin\BlockFileWalker\toInt;
+use function Xpcoin\BlockFileWalker\toAmount;
 
 
 $dir = dirname(__DIR__);
@@ -88,7 +89,7 @@ function txsView($txs){
         $o->vout = [];
         foreach ($p->vout as $out){
             $obj = new \stdClass();
-            $obj->nValue = toInt($out['nValue']);
+            $obj->nValue = toAmount($out['nValue']);
             $obj->scriptPubKey = $out['scriptPubKey']->toString();
             $obj->addrs = implode("\n",
                                   $out['scriptPubKey']->extractDestinations()[1]);
