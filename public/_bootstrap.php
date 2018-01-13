@@ -1,6 +1,6 @@
 <?php
 
-use function Xpcoin\BlockFileWalker\raw256toHexStr;
+use function Xpcoin\BlockFileWalker\toInt;
 
 
 $dir = dirname(__DIR__);
@@ -23,28 +23,79 @@ $params = $app->run($q)->getParams();
 
 
 
-function blockDetails($details){
-    $ret = new \stdClass;
-    foreach ($details->values as $k => $v){
-        switch ($k){
-            
-        }
-        $ret->$k = $v;
-    }
-
-    return $ret;
-}
-
 function blocksView($blocks){
     foreach ($blocks as $block){
-        $block->details = blockDetails($block->values['details']);
-        unset($block->values['details']);
-        yield $block;
+        $o = new \stdClass;
+        $p = $block->toPresenter();
+        $cols = [
+            'key', 'nHeight', 'nMint', 'nMoneySupply', 'nFlags',
+            'nVersion', 'hashPrev', 'nTime', 'nBits', 'nNonce',
+            'nStakeModifier',
+            'prevoutStake.hash', 'prevoutStake.n', 'nStakeTime',
+            'hashProofOfStake',
+        ];
+        $o->data = new \stdClass();
+        foreach ($cols as $col){
+            if (isset($p->$col))
+                $o->data->$col = $p->$col;
+        }
+
+        $d = $block->getDetails();
+        $vtx = $d->values['vtx'];
+
+        $o->txs = txsPresenter($vtx);
+
+        yield $o;
     }
 }
+
+function txsPresenter($txs)
+{
+    foreach ($txs as $tx){
+        yield $tx->toPresenter();
+    }
+}
+
 function txsView($txs){
     foreach ($txs as $tx){
-        yield $tx;
+        $o = new \stdClass;
+        $p = $tx->values['details']->toPresenter();
+        $cols = [
+            'txid', 'nVersion', 'nTime',
+            'prevout.hash', 'prevout.n',
+        ];
+        $o->data = new \stdClass();
+        foreach ($cols as $col){
+            if (isset($p->$col))
+                $o->data->$col = $p->$col;
+        }
+
+        if (isset($p->vin['coinbase'])){
+            $o->data->coinbase = $p->vin['coinbase'];
+            $o->data->nSequence = toInt($p->vin['nSequence']);
+        }else{
+            $obj = new \stdClass();
+            foreach ($p->vin as $in){
+                $obj->prevoutHash = bin2hex($in['prevout.hash']);
+                $obj->prevoutN = toInt($in['prevout.n']);
+                $obj->scriptSig = $in['scriptSig'];
+                $obj->nSequence = toInt($in['nSequence']);
+                $o->vin[] = $obj;
+            }
+
+        }
+
+        $o->vout = [];
+        foreach ($p->vout as $out){
+            $obj = new \stdClass();
+            $obj->nValue = toInt($out['nValue']);
+            $obj->scriptPubKey = $out['scriptPubKey']->toString();
+            $obj->addrs = implode("\n",
+                                  $out['scriptPubKey']->extractDestinations()[1]);
+            $o->vout[] = $obj;
+        }
+
+        yield $o;
     }
 }
 

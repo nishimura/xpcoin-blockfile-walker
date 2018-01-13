@@ -21,23 +21,54 @@
 
     <div>
       <div laiz:if="blocks" laiz:loop="blocks:block">
-        <div>
-          {block.key:l}
-        </div>
-
         <div style="padding-left: 16px;">
-          <table>
-            <tr laiz:loop="block.values:k:v">
+          <table style="border-bottom: 1px solid #999; margin-bottom: 2em;">
+            <tr laiz:loop="block.data:k:v">
               <th>{k} &nbsp;</th>
               <td>{v:l}</td>
             </tr>
-            <tr laiz:loop="block.details:k:v">
-              <th>{k} &nbsp;</th>
-              <td>{v:h}</td>
+            <tr>
+              <th>transactions</th>
+              <td>
+                <div laiz:loop="block.txs:v">{v.txid:l}</div>
+              </td>
             </tr>
           </table>
         </div>
       </div>
+
+
+
+      <div laiz:if="txs" laiz:loop="txs:tx">
+        <div style="padding-left: 16px;">
+          <table style="border-bottom: 1px solid #999; margin-bottom: 2em;">
+            <tr laiz:loop="tx.data:k:v">
+              <th>{k} &nbsp;</th>
+              <td>{v:l}</td>
+            </tr>
+
+            <tr laiz:if="tx.vin" laiz:loop="tx.vin:i:in">
+              <th>vin:{i}</th>
+              <td>
+                <div laiz:loop="in:name:row">
+                  <div>{name}: {row:l}</div>
+                </div>
+              </td>
+            </tr>
+
+            <tr laiz:loop="tx.vout:i:out">
+              <th>vout:{i}</th>
+              <td>
+                <div laiz:loop="out:name:row">
+                  <div>{name}: {row:l}</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+
     </div>
 
     <hr>

@@ -94,11 +94,9 @@ trait Printable
         }
 
         if (is_array($v)){
-            var_dump([$k => $v]);
-            throw new Exception('Bug');
+            return $v;
         }
 
-        
 
         if (in_array($k, self::REVERSE_KEYS))
             $v = strrev($v);

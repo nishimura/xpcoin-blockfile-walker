@@ -49,6 +49,11 @@ class DiskBlockIndex
         return Block::fromBinary($pos);
     }
 
+    public function getDetails()
+    {
+        return $this->values['details'];
+    }
+
 
     public static function fromBinary($key, $value)
     {
