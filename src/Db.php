@@ -13,17 +13,17 @@ class Db
     private $cursor;
     public function __construct($datadir)
     {
-        $dbenv = new Db4Env();
-        $ret = $dbenv->open($datadir,
-                            DB_CREATE |
-                            DB_INIT_CDB |
-                            DB_INIT_MPOOL,
-                            0666);
-        if ($ret === false)
-            throw new Exception('dbenv open error');
+        // $dbenv = new Db4Env();
+        // $ret = $dbenv->open($datadir,
+        //                     DB_CREATE |
+        //                     DB_INIT_CDB |
+        //                     DB_INIT_MPOOL,
+        //                     0666);
+        // if ($ret === false)
+        //     throw new Exception('dbenv open error');
 
-        $db = new Db4($dbenv);
-        $ret = $db->open(null, 'blkindex.dat', 'main');
+        $db = new Db4();
+        $ret = $db->open(null, $datadir . '/blkindex.dat', 'main');
 
         $cursor = $db->cursor();
 
