@@ -67,7 +67,8 @@
                   nValue: {out.nValue}
                 </div>
                 <div>
-                  {out.type}
+                  <div>scryptPubKey: {out.scriptPubKey}</div>
+                  <div>{out.type}</div>
                   <div laiz:loop="out.addrs:k:v">
                     <div>{k}: {v:l}</div>
                   </div>
