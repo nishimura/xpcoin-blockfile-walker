@@ -27,7 +27,7 @@ class Db
 
         $cursor = $db->cursor();
 
-        $this->dbenv = $dbenv;
+        //$this->dbenv = $dbenv;
         $this->db = $db;
         $this->cursor = $cursor;
     }
