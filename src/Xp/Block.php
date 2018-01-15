@@ -77,4 +77,23 @@ class Block
         fclose($fp);
         return new self($data);
     }
+
+    public static function getHashFromPos($pos)
+    {
+        list($nFile, $nBlockPos) = $pos;
+        $file = App::$datadir . '/' . self::FILE;
+        $file = sprintf($file, $nFile);
+
+        $fp = fopen($file, 'rb');
+
+        fseek($fp, $nBlockPos);
+        $bin = fread($fp, 4 + 32 + 32 + 4 + 4 + 4);
+        $hash = hash('sha256', $bin, true);
+        $hash = hash('sha256', $hash, true);
+
+        $ret = strrev($hash);
+        fclose($fp);
+
+        return $ret;
+    }
 }

@@ -30,7 +30,7 @@ function blocksView($blocks){
         $p = $block->toPresenter();
         $cols = [
             'key', 'nHeight', 'nMint', 'nMoneySupply', 'nFlags',
-            'nVersion', 'hashPrev', 'nTime', 'nBits', 'nNonce',
+            'nVersion', 'hashNext', 'hashPrev', 'nTime', 'nBits', 'nNonce',
             'nStakeModifier',
             'prevoutStake.hash', 'prevoutStake.n', 'nStakeTime',
             'hashProofOfStake',
@@ -41,25 +41,16 @@ function blocksView($blocks){
                 $o->data->$col = $p->$col;
         }
 
-        $d = $block->getDetails();
-        $vtx = $d->values['vtx'];
-
-        $o->txs = txsPresenter($vtx);
+        $o->txs = $p->details->vtx;
 
         yield $o;
-    }
-}
-
-function txsPresenter($txs)
-{
-    foreach ($txs as $tx){
-        yield $tx->toPresenter();
     }
 }
 
 function txsView($txs){
     foreach ($txs as $tx){
         $o = new \stdClass;
+        $o->blockhash = $tx->toPresenter()->blockhash;
         $p = $tx->values['details']->toPresenter();
         $cols = [
             'txid', 'nVersion', 'nTime',
@@ -71,6 +62,7 @@ function txsView($txs){
                 $o->data->$col = $p->$col;
         }
 
+        // TODO: refactoring, move to presenter
         if (isset($p->vin['coinbase'])){
             $o->data->coinbase = $p->vin['coinbase'];
             $o->data->nSequence = toInt($p->vin['nSequence']);

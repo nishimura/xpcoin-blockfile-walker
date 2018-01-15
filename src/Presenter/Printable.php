@@ -94,7 +94,7 @@ trait Printable
         }
 
         if (is_array($v)){
-            return $v;
+            throw new Exception('Bug');
         }
 
 
@@ -116,5 +116,21 @@ trait Printable
     public function __isset($k) { return isset($this->data[$k]); }
     public function __unset($k) { unset($this->data[$k]); }
     public function __set($_, $__) { throw new Exception('unsupported'); }
-    public function __get($k) { return self::getStrValue($this->data, $k); }
+    public function __get($k) {
+        if (is_array($this->data[$k])){
+            $ret = [];
+            foreach ($this->data[$k] as $_k => $_v){
+                if (method_exists($_v, 'toPresenter'))
+                    $_v = $_v->toPresenter();
+                $ret[$_k] = $_v;
+            }
+            return $ret;
+        }
+
+        if (is_object($this->data[$k])
+            && method_exists($this->data[$k], 'toPresenter'))
+            return $this->data[$k]->toPresenter();
+
+        return self::getStrValue($this->data, $k);
+    }
 }

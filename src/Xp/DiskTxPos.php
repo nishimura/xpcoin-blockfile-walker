@@ -41,48 +41,6 @@ class DiskTxPos
     public function toString()
     {
         return $this->toPresenter()->toString();
-
-        $ret = '';
-        $ret .= "key: $this->key\n";
-
-        foreach ($this->values as $k => $v){
-            $show = $v;
-            switch ($k){
-            case 'pos.nBlockPos':
-            case 'pos.nTxPos':
-            case 'pos.nFile':
-                continue 2;
-                break;
-
-            case 'nMint':
-                $show = toAmount($v->toInt());
-                break;
-
-            case 'nHeight':
-            case 'nVersion':
-                $show = $v->toInt();
-                break;
-
-            case is_array($v):
-                $show = '';
-                foreach ($v as $_k => $_v){
-                    $show .= "\n $k: $_k\n";
-                    foreach ($_v as $__k => $__v)
-                        $show .= sprintf("  %16s: %s\n", $__k, $__v);
-                }
-
-            default:
-                break;
-            }
-            if ($k == 'details')
-                $ret .= sprintf("  ===== %s =====:\n%s\n", $k, $show);
-            else
-                $ret .= sprintf("  %14s: %s\n", $k, $show);
-
-        }
-        $ret .= "\n";
-
-        return $ret;
     }
 
     public function read()
@@ -136,6 +94,9 @@ class DiskTxPos
             foreach ($diskPosBase as $k => $v)
                 $data['vSpent'][$i][$k] = readStrRev($value, $v);
         }
+
+        $data['blockhash'] = Block::getHashFromPos(
+            [toInt($data['pos.nFile']), toInt($data['pos.nBlockPos'])]);
 
         return new self($keybin, $data);
     }

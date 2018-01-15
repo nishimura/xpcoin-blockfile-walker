@@ -10,22 +10,13 @@ class TxPos
 
     const INT_KEYS = [
         'nVersion',
-        'prevout.n',
-        'nSequence',
     ];
     const HEX_KEYS = [
-        'txid',
-        'prevout.hash',
-        'scriptSig',
-        'coinbase',
-        'scriptPubKey',
+        'blockhash',
     ];
     const TIME_KEYS = [
-        'nTime',
-        'nLockTime',
     ];
     const AMOUNT_KEYS = [
-        'nValue',
     ];
     const REVERSE_KEYS = [
     ];
