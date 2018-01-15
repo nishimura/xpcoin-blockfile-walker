@@ -85,7 +85,6 @@ class App
 
         $addr7 = hexdec(bin2hex(addrToBin7($query)));
         $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
-        $ret = [];
 
         $prefix = packStr('tx');
         foreach ($pdo->query($sql) as $row){
@@ -102,9 +101,8 @@ class App
             $q = $prefix .$txid;
             foreach ($this->db->range($q) as $key => $value){
                 $tx = Xp\DiskTxPos::fromBinary($key, $value);
-                $ret[] = $tx;
+                yield $tx;
             }
         }
-        return $ret;
     }
 }
