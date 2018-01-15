@@ -63,8 +63,14 @@
             <tr laiz:loop="tx.vout:i:out">
               <th>vout:{i}</th>
               <td>
-                <div laiz:loop="out:name:row">
-                  <div>{name}: {row:l}</div>
+                <div>
+                  nValue: {out.nValue}
+                </div>
+                <div>
+                  {out.type}
+                  <div laiz:loop="out.addrs:k:v">
+                    <div>{k}: {v:l}</div>
+                  </div>
                 </div>
               </td>
             </tr>

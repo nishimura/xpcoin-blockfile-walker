@@ -83,8 +83,13 @@ function txsView($txs){
             $obj = new \stdClass();
             $obj->nValue = toAmount($out['nValue']);
             $obj->scriptPubKey = $out['scriptPubKey']->toString();
-            $obj->addrs = implode("\n",
-                                  $out['scriptPubKey']->extractDestinations()[1]);
+
+            $obj->addrs = [];
+            $dests = $out['scriptPubKey']->extractDestinations();
+            if ($dests){
+                $obj->type = $dests[0];
+                $obj->addrs = $dests[1];
+            }
             $o->vout[] = $obj;
         }
 
