@@ -75,7 +75,7 @@ class App
         return $ret;
     }
 
-    private function queryAddr($query)
+    private function queryAddr($query, $limit = 1000)
     {
         $file = dirname(__DIR__) . '/db/db.sqlite3';
         $pdo = new PDO('sqlite:' . $file);
@@ -84,7 +84,7 @@ class App
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 
         $addr7 = hexdec(bin2hex(addrToBin7($query)));
-        $sql = sprintf('select * from addr where hash = %d order by blockheight desc', $addr7);
+        $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
         $ret = [];
 
         $prefix = packStr('tx');
