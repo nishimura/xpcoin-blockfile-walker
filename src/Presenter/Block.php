@@ -17,6 +17,7 @@ class Block
         'nBits',
         'vchBlockSig',
         'nNonce',
+        'hash',
     ];
     const TIME_KEYS = [
         'nTime',

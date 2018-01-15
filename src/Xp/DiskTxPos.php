@@ -95,8 +95,8 @@ class DiskTxPos
                 $data['vSpent'][$i][$k] = readStrRev($value, $v);
         }
 
-        $data['blockhash'] = Block::getHashFromPos(
-            [toInt($data['pos.nFile']), toInt($data['pos.nBlockPos'])]);
+        $data['blockhash'] = strrev(Block::getHashFromPos(
+            [toInt($data['pos.nFile']), toInt($data['pos.nBlockPos'])]));
 
         return new self($keybin, $data);
     }

@@ -74,8 +74,23 @@ class Block
         $data['vchBlockSig'] = readFpVector($fp);
 
 
+        fseek($fp, $nBlockPos);
+        $data['hash'] = strrev(self::getHashFromFp($fp));
+
+
         fclose($fp);
         return new self($data);
+    }
+
+    public static function getHashFromFp($fp)
+    {
+        $start = ftell($fp);
+
+        $bin = fread($fp, 4 + 32 + 32 + 4 + 4 + 4);
+        $hash = hash('sha256', $bin, true);
+        $hash = hash('sha256', $hash, true);
+
+        return $hash;
     }
 
     public static function getHashFromPos($pos)
@@ -87,11 +102,9 @@ class Block
         $fp = fopen($file, 'rb');
 
         fseek($fp, $nBlockPos);
-        $bin = fread($fp, 4 + 32 + 32 + 4 + 4 + 4);
-        $hash = hash('sha256', $bin, true);
-        $hash = hash('sha256', $hash, true);
 
-        $ret = strrev($hash);
+        $ret = self::getHashFromFp($fp);
+
         fclose($fp);
 
         return $ret;
