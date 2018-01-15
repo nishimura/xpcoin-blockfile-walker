@@ -7,7 +7,7 @@ XPCoin Blockfile Walker
 Depends: PHP5.6, db4
 
 ```
-sudo apt install php5.6-dev php5.6-fpm php5.6-bcmath
+sudo apt install php5.6-dev php5.6-fpm php5.6-bcmath php5.6-sqlite
 
 git clone https://github.com/nishimura/xpcoin-blockfile-walker.git
 wget http://download.oracle.com/berkeley-db/db-6.2.32.tar.gz

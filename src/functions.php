@@ -1,6 +1,7 @@
 <?php
 
 namespace Xpcoin\BlockFileWalker;
+use StephenHill\Base58;
 
 function startsWith($haystack, $needle){
     return (strpos($haystack, $needle) === 0);
@@ -132,4 +133,12 @@ function readFpVector($fp)
     if ($size <= 0)
         return '';
     return fread($fp, $size);
+}
+
+function addrToBin7($addr)
+{
+    $base58 = new Base58();
+    $bin = $base58->decode($addr);
+    $rev = strrev($bin);
+    return readStr($rev, 7);
 }

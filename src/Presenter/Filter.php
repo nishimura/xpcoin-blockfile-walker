@@ -6,10 +6,16 @@ class Filter
 {
     public static function toHashLink($str)
     {
-        if (strlen($str) !== 64)
-            return $str;
+        $str = $str . '';
+        $hit = false;
+        if (strlen($str) == 64 &&
+            preg_match('/^[0-9a-f]+$/', $str))
+            $hit = true;
 
-        if (!preg_match('/^[0-9a-f]+$/', $str))
+        if (strlen($str) == 34 && $str[0] == 'X')
+            $hit = true;
+
+        if (!$hit)
             return $str;
 
         return '<a href="?q=' . $str . '">' . $str . '</a>';
