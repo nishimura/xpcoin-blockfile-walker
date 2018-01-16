@@ -9,7 +9,6 @@ class BlockIndex
     use Printable;
     const INT_KEYS = [
         'serVersion',
-        'nMoneySupply',
         'nFlags',
         'nHeight',
         'nVersion',
@@ -32,6 +31,7 @@ class BlockIndex
     ];
     const AMOUNT_KEYS = [
         'nMint',
+        'nMoneySupply',
     ];
     const REVERSE_KEYS = [
     ];
