@@ -35,6 +35,7 @@ foreach ($db->query('select * from posinfo') as $row){
                        $row->npos));
     break;
 }
+$lastPos = $prevLastPos;
 fseek($fp, $prevLastPos);
 
 function toInt56($str)
@@ -188,10 +189,12 @@ for ($i = 1; $i <= $max; $i++){
 
 }
 
-$db->query('delete from posinfo');
-$db->query(
-    sprintf('INSERT INTO posinfo values (1, %d)',
-            $lastPos));
+if ($prevLastPos != $lastPos){
+    $db->query('delete from posinfo');
+    $db->query(
+        sprintf('INSERT INTO posinfo values (1, %d)',
+                $lastPos));
+}
 
 echo "\n";
 
