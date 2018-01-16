@@ -19,10 +19,13 @@ class Block
     const FILE = 'blk%04d.dat';
 
     public $values;
+    public $isCoinStake;
     public function __construct($data)
     {
         foreach ($data as $k => $v)
             $this->values[$k] = $v;
+
+        $this->isCOinStake = $this->isCoinStake();
     }
 
     public static function getPresenter(Block $obj)
@@ -39,6 +42,12 @@ class Block
     public function toString()
     {
         return $this->toPresenter()->toString();
+    }
+
+    public function isCoinStake()
+    {
+        return (count($this->values['vtx']) > 1 &&
+                $this->values['vtx'][1]->isCoinStake());
     }
 
     public static function fromBinary($pos)

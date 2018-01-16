@@ -18,7 +18,7 @@ class BlockIndex
         'prevoutStake.n',
     ];
     const HEX_KEYS = [
-        'key',
+        'hash',
         'hashNext',
         'nStakeModifier',
         'hashPrev',
@@ -42,7 +42,7 @@ class BlockIndex
     private $data;
     public function __construct(Xp\DiskBlockIndex $b)
     {
-        $values = ['key' => $b->key];
+        $values = ['hash' => $b->hash];
         $values += $b->values;
         $this->data = $values;
     }

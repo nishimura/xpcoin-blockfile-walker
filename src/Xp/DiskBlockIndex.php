@@ -14,11 +14,11 @@ use function Xpcoin\BlockFileWalker\toInt;
 class DiskBlockIndex
 {
     const BLOCK_PROOF_OF_STAKE = 1 << 0;
-    public $key;
+    public $hash;
     public $values;
     public function __construct($key, $data)
     {
-        $this->key = $key;
+        $this->hash = $key;
         $this->values = $data;
 
         $this->values['details'] = $this->read();

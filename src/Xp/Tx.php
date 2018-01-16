@@ -38,6 +38,13 @@ class Tx
         return $this->toPresenter()->toString();
     }
 
+    public function isCoinStake()
+    {
+        return !isset($this->values['vin']['coinbase']) &&
+            count($this->values['vout']) >= 2 &&
+            $this->values['vout'][0]['scriptPubKey']->toString() == '';
+    }
+
     public static function isCoinbase($vin)
     {
         if (count($vin) != 1)

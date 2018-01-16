@@ -29,8 +29,10 @@ class Block
 
 
     private $data;
+    public $isCoinStake;
     public function __construct(Xp\Block $block)
     {
         $this->data = $block->values;
+        $this->isCoinStake = $block->isCoinStake;
     }
 }

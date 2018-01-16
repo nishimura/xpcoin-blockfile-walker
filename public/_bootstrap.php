@@ -30,7 +30,7 @@ function blocksView($blocks){
         $o = new \stdClass;
         $p = $block->toPresenter();
         $cols = [
-            'key', 'nHeight', 'nMint', 'nMoneySupply', 'nFlags',
+            'hash', 'nHeight', 'nMint', 'nMoneySupply', 'nFlags',
             'nVersion', 'hashNext', 'hashPrev', 'nTime', 'nBits', 'nNonce',
             'nStakeModifier',
             'prevoutStake.hash', 'prevoutStake.n', 'nStakeTime',
