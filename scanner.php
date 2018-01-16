@@ -85,7 +85,22 @@ for ($i = 1; $i <= $max; $i++){
                         $hash7, $nFile, $_nBlockPos, $nHeight));
         }catch (\Exception $e){
             echo $e->getMessage();
-            continue 2;
+            foreach ($bdb->range($packIndex . $revhash) as $_key => $_value){
+                readStr($_value, 36);
+                $_nFile = hexdec(bin2hex(strrev(readStr($_value, 4))));
+                $_nPos = hexdec(bin2hex(strrev(readStr($_value, 4))));
+                $_nHeight = hexdec(bin2hex(strrev(readStr($_value, 4))));
+                echo "nFile:$_nFile, nPos:$_nPos\n";
+                if ($_nPos != $nBlockPos){
+                    fseek($fp, $nblockPos + $blocksize);
+                    $lastPos = ftell($fp);
+                    continue 2;
+                }else{
+                    $db->query(sprintf('UPDATE bindex set nfile = %d, npos = %d, nheight = %d where hash = %d',
+                                       $_nFile, $_nPos, $_nHeight, $hash7));
+                    $nBlockPos = $_nPos;
+                }
+            }
         }
         break;
     }
