@@ -31,7 +31,7 @@ class App
             $p->txs = [];
             return $this;
         }
-        if ($query[0] === 'X'){
+        if (in_array($query[0], Config::$ADDRESS_PREFIX)){
             $p->blocks = [];
             $p->txs = $this->queryAddr($query);
             return $this;

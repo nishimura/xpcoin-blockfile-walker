@@ -6,8 +6,6 @@ use StephenHill\Base58;
 
 class PubKey
 {
-    const PUBKEY_ADDRESS = 75;
-
     private $bin;
     private $isHash;
     public function __construct($bin, $isHash = false)
@@ -47,7 +45,7 @@ class PubKey
     {
         if (!$hash)
             $bin = self::binToKeyId($bin);
-        $bin = pack('C', self::PUBKEY_ADDRESS) . $bin;
+        $bin = pack('C', Config::$PUBKEY_ADDRESS) . $bin;
 
         $checksum = hash('sha256', $bin, true);
         $checksum = hash('sha256', $checksum, true);

@@ -2,6 +2,8 @@
 
 namespace Xpcoin\BlockFileWalker\Presenter;
 
+use Xpcoin\BlockFileWalker\Config;
+
 class Filter
 {
     public static function toHashLink($str)
@@ -12,7 +14,7 @@ class Filter
             preg_match('/^[0-9a-f]+$/', $str))
             $hit = true;
 
-        if (strlen($str) == 34 && $str[0] == 'X')
+        if (strlen($str) == 34 && in_array($str[0], Config::$ADDRESS_PREFIX))
             $hit = true;
 
         if (!$hit)
