@@ -53,3 +53,15 @@ php5.6 -S localhost:8989 public/_bootstrap.php
 ```
 
 Needs writable cache directory and xp data directory.
+
+
+### Build Index
+
+```
+cp db/db-template.sqlite3 db/db.sqlite3
+
+php5.6 scanner.php 10
+php5.6 scanner.php 10000
+```
+
+build height index, address index, ...
