@@ -14,6 +14,8 @@ class BlockIndex
         'nHeight',
         'nVersion',
         'nNonce',
+        'nFile',
+        'nBlockPos',
     ];
     const HEX_KEYS = [
         'key',

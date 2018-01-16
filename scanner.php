@@ -1,6 +1,6 @@
 <?php
 
-use Xpcoin\BlockFileWalker\App;
+use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Db;
 use Xpcoin\BlockFileWalker\Xp;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
@@ -14,17 +14,13 @@ chdir($dir);
 
 require_once  "$dir/vendor/autoload.php";
 
-$config = parse_ini_file("$dir/config.ini");
-$datadir = $config['datadir'];
+Config::set("$dir/config.ini");
 
-// TODO: refactoring
-App::$datadir = $datadir;
-
-$file = $datadir . '/blk0001.dat';
+$file = Config::$datadir . '/blk0001.dat';
 $fp = fopen($file, 'rb');
 
-$bdb = new Db($datadir);
-$db = new PDO('sqlite:' . __DIR__ . '/db/db.sqlite3');
+$bdb = new Db(Config::$datadir);
+$db = new PDO(Config::$dsn);
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
@@ -33,10 +29,10 @@ $prevLastPos = 0;
 foreach ($db->query('select * from posinfo') as $row){
     $prevLastPos = $row->npos;
 
-    $db->query(sprintf('delete from bindex where height > %d',
-                       $row->nheight));
-    $db->query(sprintf('delete from addr where blockheight > %d',
-                       $row->nheight));
+    $db->query(sprintf('delete from bindex where npos > %d',
+                       $row->npos));
+    $db->query(sprintf('delete from addr where npos > %d',
+                       $row->npos));
     break;
 }
 fseek($fp, $prevLastPos);
@@ -45,6 +41,11 @@ function toInt56($str)
 {
     return hexdec(bin2hex(readStr($str, 7)));
 }
+function readInt32(&$str)
+{
+    return hexdec(bin2hex(strrev(readStr($str, 4))));
+}
+
 $packIndex = packStr('blockindex');
 $packTx = packStr('tx');
 
@@ -71,14 +72,21 @@ for ($i = 1; $i <= $max; $i++){
     $blockhash = strrev($revhash);
     $query = $packIndex . $revhash;
     foreach ($bdb->range($query) as $key => $value){
-        readStr($value, 44);
-        $binHeight = strrev(readStr($value, 4));
-        $nHeight = hexdec(bin2hex($binHeight));
+        readStr($value, 36);
+        $nFile = readInt32($value);
+        $_nBlockPos = readInt32($value);
+        $nHeight = readInt32($value);
 
         $hash7 = toInt56($revhash);
-        $db->query(
-            sprintf('INSERT INTO bindex values (%d, %d)',
-                    $hash7, $nHeight));
+
+        try {
+            $db->query(
+                sprintf('INSERT INTO bindex values (%d, %d, %d, %d)',
+                        $hash7, $nFile, $_nBlockPos, $nHeight));
+        }catch (\Exception $e){
+            echo $e->getMessage();
+            continue 2;
+        }
         break;
     }
 
@@ -114,8 +122,8 @@ for ($i = 1; $i <= $max; $i++){
                         $revaddr = strrev($addr);
                         $addr7 = toInt56($revaddr);
                         $db->query(
-                            sprintf('INSERT INTO addr values (%d, %d, %d, null)',
-                                    $addr7, $nHeight, $txhash7));
+                            sprintf('INSERT INTO addr values (%d, %d, %d, %d, %d, null)',
+                                    $addr7, $nHeight, $nFile, $nBlockPos, $txhash7));
                     }
 
                     break;
@@ -132,8 +140,8 @@ for ($i = 1; $i <= $max; $i++){
                     $revaddr = strrev($addr);
                     $addr7 = toInt56($revaddr);
                     $db->query(
-                        sprintf('INSERT INTO addr values (%d, %d, null, %d)',
-                                $addr7, $nHeight, $txhash7));
+                        sprintf('INSERT INTO addr values (%d, %d, %d, %d, null, %d)',
+                                $addr7, $nHeight, $nFile, $nBlockPos, $txhash7));
                 }
             }
         }
@@ -151,8 +159,8 @@ for ($i = 1; $i <= $max; $i++){
     if ($i % 1000 == 0){
         $db->query('delete from posinfo');
         $db->query(
-            sprintf('INSERT INTO posinfo values (1, %d, %d)',
-                    $lastPos, $nHeight));
+            sprintf('INSERT INTO posinfo values (1, %d)',
+                    $lastPos));
         echo '.';
     }
     if ($i % 10000 == 0){
@@ -163,8 +171,8 @@ for ($i = 1; $i <= $max; $i++){
 
 $db->query('delete from posinfo');
 $db->query(
-    sprintf('INSERT INTO posinfo values (1, %d, %d)',
-            $lastPos, $nHeight));
+    sprintf('INSERT INTO posinfo values (1, %d)',
+            $lastPos));
 
 echo "\n";
 

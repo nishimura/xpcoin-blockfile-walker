@@ -1,5 +1,6 @@
 <?php
 
+use Xpcoin\BlockFileWalker\Config;
 use function Xpcoin\BlockFileWalker\toInt;
 use function Xpcoin\BlockFileWalker\toAmount;
 
@@ -10,13 +11,13 @@ chdir($dir);
 
 require_once  "$dir/vendor/autoload.php";
 
-$config = parse_ini_file("$dir/config.ini");
+Config::set("$dir/config.ini");
 
 $q = null;
 if (isset($_GET['q']))
     $q = $_GET['q'];
 
-$app = new Xpcoin\BlockFileWalker\App($dir, $config);
+$app = new Xpcoin\BlockFileWalker\App($dir);
 //$app->run($q)->show('public', 'cache');
 $params = $app->run($q)->getParams();
 

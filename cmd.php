@@ -1,17 +1,19 @@
 <?php
 
+use Xpcoin\BlockFileWalker\Config;
+
 $dir = __DIR__;
 chdir($dir);
 
 require_once  "$dir/vendor/autoload.php";
 
-$config = parse_ini_file("$dir/config.ini");
+Config::set("$dir/config.ini");
 
 $q = null;
 if (isset($argv[1]))
     $q = $argv[1];
 
-$app = new Xpcoin\BlockFileWalker\App($dir, $config);
+$app = new Xpcoin\BlockFileWalker\App($dir);
 
 $params = $app->run($q)->getParams();
 foreach ($params as $k => $v){

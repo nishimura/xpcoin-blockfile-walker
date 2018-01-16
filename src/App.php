@@ -8,23 +8,17 @@ use PDO;
 
 class App
 {
-    public static $datadir;
-
     private $rootdir;
-    private $config;
     private $params;
     private $db;
 
-    public function __construct($dir, $config)
+    public function __construct($dir)
     {
         $this->rootdir = $dir;
-        $this->config = $config;
 
         $this->params = new \stdClass;
 
-        $this->db = new Db($this->config['datadir']);
-
-        self::$datadir = $config['datadir'];
+        $this->db = new Db(Config::$datadir);
     }
 
     public function run($query = null)
@@ -32,6 +26,11 @@ class App
         $p = $this->params;
         $p->query = $query;
 
+        if ($query === null){
+            $p->blocks = $this->queryHeight();
+            $p->txs = [];
+            return $this;
+        }
         if ($query[0] === 'X'){
             $p->blocks = [];
             $p->txs = $this->queryAddr($query);
@@ -75,13 +74,39 @@ class App
         return $ret;
     }
 
-    private function queryAddr($query, $limit = 1000)
+    private function getPdo()
     {
-        $file = dirname(__DIR__) . '/db/db.sqlite3';
-        $pdo = new PDO('sqlite:' . $file);
+        $pdo = new PDO(Config::$dsn);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+        return $pdo;
+    }
+    private function queryHeight($limit = 100)
+    {
+        $pdo = $this->getPdo();
+        $sql = 'select * from bindex order by height desc limit ' . $limit;
+
+        $prefix = packStr('blockindex');
+        foreach ($pdo->query($sql) as $row){
+            $hash7 = $row->hash;
+            $hash7 = dechex($hash7);
+            if (strlen($hash7) % 2 == 1)
+                $hash7 = '0' . $hash7;
+            $hashid = hex2bin($hash7);
+
+            $q = $prefix .$hashid;
+            foreach ($this->db->range($q) as $key => $value){
+                $block = Xp\DiskBlockIndex::fromBinary($key, $value);
+                yield $block;
+            }
+        }
+    }
+
+
+    private function queryAddr($query, $limit = 100)
+    {
+        $pdo = $this->getPdo();
 
         $addr7 = hexdec(bin2hex(addrToBin7($query)));
         $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);

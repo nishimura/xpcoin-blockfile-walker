@@ -2,7 +2,7 @@
 
 namespace Xpcoin\BlockFileWalker\Xp;
 
-use Xpcoin\BlockFileWalker\App;
+use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Presenter;
 use Xpcoin\BlockFileWalker\Script;
 
@@ -52,7 +52,7 @@ class Tx
     public static function fromBinary($pos)
     {
         list($nFile, $nBlockPos, $nTxPos) = $pos;
-        $file = App::$datadir . '/' . self::FILE;
+        $file = Config::$datadir . '/' . self::FILE;
         $file = sprintf($file, $nFile);
 
         //var_dump($file, $nBlockPos, $nTxPos);

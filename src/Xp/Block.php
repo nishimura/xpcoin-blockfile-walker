@@ -2,7 +2,7 @@
 
 namespace Xpcoin\BlockFileWalker\Xp;
 
-use Xpcoin\BlockFileWalker\App;
+use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Presenter;
 
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
@@ -44,7 +44,7 @@ class Block
     public static function fromBinary($pos)
     {
         list($nFile, $nBlockPos) = $pos;
-        $file = App::$datadir . '/' . self::FILE;
+        $file = Config::$datadir . '/' . self::FILE;
         $file = sprintf($file, $nFile);
 
         $fp = fopen($file, 'rb');
@@ -96,7 +96,7 @@ class Block
     public static function getHashFromPos($pos)
     {
         list($nFile, $nBlockPos) = $pos;
-        $file = App::$datadir . '/' . self::FILE;
+        $file = Config::$datadir . '/' . self::FILE;
         $file = sprintf($file, $nFile);
 
         $fp = fopen($file, 'rb');
