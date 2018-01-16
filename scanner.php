@@ -101,7 +101,7 @@ for ($i = 1; $i <= $max; $i++){
                     $lastPos = ftell($fp);
                     continue 2;
                 }else{
-                    $db->query(sprintf('UPDATE bindex set nfile = %d, npos = %d, nheight = %d where hash = %d',
+                    $db->query(sprintf('UPDATE bindex set nfile = %d, npos = %d, height = %d where hash = %d',
                                        $_nFile, $_nPos, $_nHeight, $hash7));
                     $nBlockPos = $_nPos;
                 }
