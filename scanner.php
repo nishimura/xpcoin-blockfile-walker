@@ -59,6 +59,8 @@ for ($i = 1; $i <= $max; $i++){
     if (feof($fp))
         break;
     $b = fread($fp, 4);
+    if (strlen($b) == 0)
+        break;
     $bhex = bin2hex($b);
     if ($bhex !== 'b4f8e2e5' && $bhex !== 'cdf2c0ef'){
         // pchMessageStart = 0xb4, 0xf8, 0xe2, 0xe5
