@@ -60,9 +60,9 @@ for ($i = 1; $i <= $max; $i++){
         break;
     $b = fread($fp, 4);
     $bhex = bin2hex($b);
-    if ($bhex !== 'b4f8e2e5' && $bhex !== 'cbf2c0ef'){
+    if ($bhex !== 'b4f8e2e5' && $bhex !== 'cdf2c0ef'){
         // pchMessageStart = 0xb4, 0xf8, 0xe2, 0xe5
-        // testnet: 0xcb, 0xf2, 0xc0, 0xef
+        // testnet: 0xcd, 0xf2, 0xc0, 0xef
         throw new Exception('seek error:' . $bhex);
     }
 
