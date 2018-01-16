@@ -41,6 +41,11 @@ function blocksView($blocks){
             if (isset($p->$col))
                 $o->data->$col = $p->$col;
         }
+        $o->isCoinStake = $p->details->isCoinStake;
+        if ($o->isCoinStake)
+            $o->minedCss = 'staked';
+        else
+            $o->minedCss = 'mined';
 
         $o->txs = $p->details->vtx;
 

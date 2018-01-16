@@ -25,7 +25,7 @@ class Block
         foreach ($data as $k => $v)
             $this->values[$k] = $v;
 
-        $this->isCOinStake = $this->isCoinStake();
+        $this->isCoinStake = $this->isCoinStake();
     }
 
     public static function getPresenter(Block $obj)

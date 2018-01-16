@@ -23,6 +23,17 @@
       <div laiz:if="blocks" laiz:loop="blocks:block">
         <div style="padding-left: 16px;">
           <table style="border-bottom: 1px solid #999; margin-bottom: 2em;">
+            <tr class="{block.minedCss}">
+              <th>type</th>
+              <td>
+                <div laiz:ifel="block.isCoinStake">
+                  Staked
+                </div>
+                <div laiz:else>
+                  Mined
+                </div>
+              </td>
+            </tr>
             <tr laiz:loop="block.data:k:v">
               <th>{k} &nbsp;</th>
               <td>{v:l}</td>
