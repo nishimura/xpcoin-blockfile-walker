@@ -68,8 +68,9 @@ function txsView($txs){
             $o->data->coinbase = $p->vin['coinbase'];
             $o->data->nSequence = toInt($p->vin['nSequence']);
         }else{
-            $obj = new \stdClass();
+            $o->vin = [];
             foreach ($p->vin as $in){
+                $obj = new \stdClass();
                 $obj->prevoutHash = bin2hex($in['prevout.hash']);
                 $obj->prevoutN = toInt($in['prevout.n']);
                 $obj->scriptSig = $in['scriptSig'];
