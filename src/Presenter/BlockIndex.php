@@ -15,6 +15,7 @@ class BlockIndex
         'nNonce',
         'nFile',
         'nBlockPos',
+        'prevoutStake.n',
     ];
     const HEX_KEYS = [
         'key',
@@ -24,6 +25,8 @@ class BlockIndex
         'hashMerkleRoot',
         'nBits',
         'blockHash',
+        'prevoutStake.hash',
+        'hashProofOfStake',
     ];
     const TIME_KEYS = [
         'nStakeTime',
