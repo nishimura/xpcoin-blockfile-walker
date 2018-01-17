@@ -68,7 +68,9 @@ for ($i = 1; $i <= $max; $i++){
     $revhash = XP\Block::getHashFromFp($fp);
     $blockhash = strrev($revhash);
     $query = $packIndex . $revhash;
+    $hit = false;
     foreach ($bdb->range($query) as $key => $value){
+        $hit = true;
         readStr($value, 36);
         $nFile = readInt32($value);
         $_nBlockPos = readInt32($value);
@@ -102,7 +104,13 @@ for ($i = 1; $i <= $max; $i++){
         break;
     }
 
-    // TODO: insert addr which converted from script hash
+    if (!$hit){
+        // no indexed, invalid data
+        fseek($fp, $nblockPos + $blocksize);
+        $lastPos = ftell($fp);
+        continue;
+    }
+
     $size = readCompactSizeRaw($fp);
     //var_dump($size);
     for ($j = 0; $j < $size; $j++){
