@@ -108,7 +108,7 @@ for ($i = 1; $i <= $max; $i++){
 
     if (!$hit){
         // no indexed, invalid data
-        fseek($fp, $nblockPos + $blocksize);
+        fseek($fp, $nBlockPos + $blocksize);
         $lastPos = ftell($fp);
         continue;
     }
