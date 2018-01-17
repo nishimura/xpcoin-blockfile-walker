@@ -35,7 +35,6 @@ class Tx
         return self::getPresenter($this);
     }
 
-
     public function __toString() { return $this->toString(); }
     public function toString()
     {
@@ -47,6 +46,16 @@ class Tx
         return !isset($this->values['vin']['coinbase']) &&
             count($this->values['vout']) >= 2 &&
             $this->values['vout'][0]['scriptPubKey']->toString() == '';
+    }
+
+    public function readNextVin()
+    {
+        $hash = strrev($this->values['txid']);
+        foreach ($this->values['vout'] as $i => $out){
+            list($nexthash, $nextn) = self::getNextVin($hash, $i);
+            $this->values['vout'][$i]['nextin.hash'] = $nexthash;
+            $this->values['vout'][$i]['nextin.n'] = $nextn;
+        }
     }
 
     public static $pdo;
@@ -158,12 +167,6 @@ class Tx
             'txid' => strrev($hash),
         ];
         $data = $renew + $data;
-
-        foreach ($data['vout'] as $i => $out){
-            list($nexthash, $nextn) = self::getNextVin($hash, $i);
-            $data['vout'][$i]['nextin.hash'] = $nexthash;
-            $data['vout'][$i]['nextin.n'] = $nextn;
-        }
 
         return new self($data);
     }

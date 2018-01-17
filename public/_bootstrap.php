@@ -57,6 +57,7 @@ function txsView($txs){
     foreach ($txs as $tx){
         $o = new \stdClass;
         $o->blockhash = $tx->toPresenter()->blockhash;
+        $tx->values['details']->readNextVin();
         $p = $tx->values['details']->toPresenter();
         $cols = [
             'txid', 'nVersion', 'nTime',
