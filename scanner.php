@@ -192,8 +192,7 @@ if ($prevLastPos != $lastPos){
         sprintf('INSERT INTO posinfo values (1, %d)',
                 $lastPos));
     $db->commit();
+    echo "\n";
 }
-
-echo "\n";
 
 exit;
