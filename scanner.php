@@ -23,8 +23,6 @@ $fp = fopen($file, 'rb');
 $bdb = new Db(Config::$datadir);
 $db = Config::getPdo();
 
-$db->beginTransaction();
-
 $prevLastPos = 0;
 // TODO: fpos
 foreach ($db->query('select * from posinfo') as $row){
@@ -54,12 +52,16 @@ for ($i = 1; $i <= $max; $i++){
     $b = fread($fp, 4);
     if (strlen($b) == 0)
         break;
+
     $bhex = bin2hex($b);
     if ($bhex !== Config::$MESSAGE){
         // pchMessageStart = 0xb4, 0xf8, 0xe2, 0xe5
         // testnet: 0xcd, 0xf2, 0xc0, 0xef
         throw new Exception('seek error:' . $bhex);
     }
+
+    $db->beginTransaction();
+
 
     $blocksize = hexdec(bin2hex(strrev(fread($fp, 4))));
     //var_dump($blocksize);
@@ -85,7 +87,6 @@ for ($i = 1; $i <= $max; $i++){
         }catch (\Exception $e){
             echo $e->getMessage();
             $db->rollback();
-            $db->beginTransaction();
             foreach ($bdb->range($packIndex . $revhash) as $_key => $_value){
                 readStr($_value, 36);
                 $_nFile = hexdec(bin2hex(strrev(readStr($_value, 4))));
@@ -97,10 +98,12 @@ for ($i = 1; $i <= $max; $i++){
                     $lastPos = ftell($fp);
                     continue 2;
                 }else{
+                    $db->beginTransaction();
                     $db->query(sprintf('UPDATE bindex set height = %d where hash = %d',
                                        $_nHeight, $hash7));
                     $nBlockPos = $_nPos;
                 }
+                break;
             }
         }
         break;
@@ -110,6 +113,7 @@ for ($i = 1; $i <= $max; $i++){
         // no indexed, invalid data
         fseek($fp, $nBlockPos + $blocksize);
         $lastPos = ftell($fp);
+        $db->rollback();
         continue;
     }
 
@@ -128,6 +132,7 @@ for ($i = 1; $i <= $max; $i++){
             // block is indexed, tx is not indexed, not main branch
             fseek($fp, $nBlockPos + $blocksize);
             $lastPos = ftell($fp);
+            $db->rollback();
             continue 2;
         }
 
@@ -184,37 +189,22 @@ for ($i = 1; $i <= $max; $i++){
         }
     }
 
-
-    // debug
-    if (1){
-    }
-
-
     fseek($fp, $nBlockPos + $blocksize);
     $lastPos = ftell($fp);
 
-    if ($i % 1000 == 0){
-        $db->query('delete from posinfo');
-        $db->query(
+    $db->query('delete from posinfo');
+    $db->query(
             sprintf('INSERT INTO posinfo values (1, %d)',
                     $lastPos));
-        $db->commit();
-        $db->beginTransaction();
+    $db->commit();
+
+    if ($i % 1000 == 0){
         echo '.';
     }
     if ($i % 10000 == 0){
-        echo $i;
+        echo "$i\n";
     }
 
-}
-
-if ($prevLastPos != $lastPos){
-    $db->query('delete from posinfo');
-    $db->query(
-        sprintf('INSERT INTO posinfo values (1, %d)',
-                $lastPos));
-    $db->commit();
-    echo "\n";
 }
 
 exit;
