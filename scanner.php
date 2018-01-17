@@ -8,6 +8,7 @@ use function Xpcoin\BlockFileWalker\readStr;
 use function Xpcoin\BlockFileWalker\packKey;
 use function Xpcoin\BlockFileWalker\packStr;
 use function Xpcoin\BlockFileWalker\toInt;
+use function Xpcoin\BlockFileWalker\toIntDb;
 
 $dir = __DIR__;
 chdir($dir);
@@ -20,28 +21,19 @@ $file = Config::$datadir . '/blk0001.dat';
 $fp = fopen($file, 'rb');
 
 $bdb = new Db(Config::$datadir);
-$db = new PDO(Config::$dsn);
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+$db = Config::getPdo();
+
+$db->beginTransaction();
 
 $prevLastPos = 0;
+// TODO: fpos
 foreach ($db->query('select * from posinfo') as $row){
     $prevLastPos = $row->npos;
-
-    $db->query(sprintf('delete from bindex where npos > %d',
-                       $row->npos));
-    $db->query(sprintf('delete from addr where npos > %d',
-                       $row->npos));
     break;
 }
 $lastPos = $prevLastPos;
 fseek($fp, $prevLastPos);
 
-function toInt56($str)
-{
-    return hexdec(bin2hex(readStr($str, 7)));
-}
 function readInt32(&$str)
 {
     return hexdec(bin2hex(strrev(readStr($str, 4))));
@@ -82,12 +74,12 @@ for ($i = 1; $i <= $max; $i++){
         $_nBlockPos = readInt32($value);
         $nHeight = readInt32($value);
 
-        $hash7 = toInt56($revhash);
+        $hash7 = toIntDb($revhash);
 
         try {
             $db->query(
-                sprintf('INSERT INTO bindex values (%d, %d, %d, %d)',
-                        $hash7, $nFile, $_nBlockPos, $nHeight));
+                sprintf('INSERT INTO bindex values (%d, %d)',
+                        $hash7, $nHeight));
         }catch (\Exception $e){
             echo $e->getMessage();
             foreach ($bdb->range($packIndex . $revhash) as $_key => $_value){
@@ -101,8 +93,8 @@ for ($i = 1; $i <= $max; $i++){
                     $lastPos = ftell($fp);
                     continue 2;
                 }else{
-                    $db->query(sprintf('UPDATE bindex set nfile = %d, npos = %d, height = %d where hash = %d',
-                                       $_nFile, $_nPos, $_nHeight, $hash7));
+                    $db->query(sprintf('UPDATE bindex set height = %d where hash = %d',
+                                       $_nHeight, $hash7));
                     $nBlockPos = $_nPos;
                 }
             }
@@ -116,7 +108,7 @@ for ($i = 1; $i <= $max; $i++){
     for ($j = 0; $j < $size; $j++){
         $tx = Xp\Tx::readFp($fp);
         $txhash = $tx->values['txid'];
-        $txhash7 = toInt56(strrev($txhash));
+        $txhash7 = toIntDb(strrev($txhash));
 
         if (isset($tx->values['vin']['coinbase'])){
             // nothing
@@ -140,11 +132,14 @@ for ($i = 1; $i <= $max; $i++){
                     foreach ($dests[1] as $addr){
                         $addr = $addr->toAddressBin();
                         $revaddr = strrev($addr);
-                        $addr7 = toInt56($revaddr);
+                        $addr7 = toIntDb($revaddr);
                         $db->query(
-                            sprintf('INSERT INTO addr values (%d, %d, %d, %d, %d, null)',
-                                    $addr7, $nHeight, $nFile, $nBlockPos, $txhash7));
+                            sprintf('INSERT INTO addr values (%d, %d, %d, true)',
+                                    $addr7, $nHeight, $txhash7));
                     }
+                    $db->query(
+                        sprintf('INSERT INTO txindex values(%d, %d, %d, %d)',
+                                toIntDb($revhash), $prevN, $txhash7, $k));
 
                     break;
                 }
@@ -158,10 +153,10 @@ for ($i = 1; $i <= $max; $i++){
                     //echo $addr . "\n";
                     $addr = $addr->toAddressBin();
                     $revaddr = strrev($addr);
-                    $addr7 = toInt56($revaddr);
+                    $addr7 = toIntDb($revaddr);
                     $db->query(
-                        sprintf('INSERT INTO addr values (%d, %d, %d, %d, null, %d)',
-                                $addr7, $nHeight, $nFile, $nBlockPos, $txhash7));
+                        sprintf('INSERT INTO addr values (%d, %d, %d, false)',
+                                $addr7, $nHeight, $txhash7));
                 }
             }
         }
@@ -181,6 +176,8 @@ for ($i = 1; $i <= $max; $i++){
         $db->query(
             sprintf('INSERT INTO posinfo values (1, %d)',
                     $lastPos));
+        $db->commit();
+        $db->beginTransaction();
         echo '.';
     }
     if ($i % 10000 == 0){
@@ -194,6 +191,7 @@ if ($prevLastPos != $lastPos){
     $db->query(
         sprintf('INSERT INTO posinfo values (1, %d)',
                 $lastPos));
+    $db->commit();
 }
 
 echo "\n";

@@ -12,6 +12,7 @@ class Tx
         'nVersion',
         'prevout.n',
         'nSequence',
+        'nextin.n',
     ];
     const HEX_KEYS = [
         'txid',
@@ -19,6 +20,7 @@ class Tx
         'scriptSig',
         'coinbase',
         'scriptPubKey',
+        'nextin.hash',
     ];
     const TIME_KEYS = [
         'nTime',

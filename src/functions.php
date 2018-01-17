@@ -142,3 +142,16 @@ function addrToBin7($addr)
     $rev = strrev($bin);
     return readStr($rev, 7);
 }
+
+function toIntDb($str)
+{
+    return hexdec(bin2hex(readStr($str, 7)));
+}
+
+function decToBin($dec)
+{
+    $hex = dechex($dec);
+    if (strlen($hex) % 2 == 1)
+        $hex = '0' . $hex;
+    return hex2bin($hex);
+}

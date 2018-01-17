@@ -2,6 +2,8 @@
 
 namespace Xpcoin\BlockFileWalker;
 
+use PDO;
+
 class Config
 {
     public static $datadir;
@@ -26,5 +28,14 @@ class Config
             self::$ADDRESS_PREFIX = ['X'];
             self::$MESSAGE = 'b4f8e2e5';
         }
+    }
+
+    public static function getPdo()
+    {
+        $db = new PDO(self::$dsn);
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+        return $db;
     }
 }

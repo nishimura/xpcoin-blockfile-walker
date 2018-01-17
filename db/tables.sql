@@ -5,16 +5,21 @@ CREATE TABLE posinfo(
 
 CREATE TABLE bindex(
   hash bigint not null primary key,
-  nfile bigint not null,
-  npos bigint not null,
   height bigint not null
+);
+
+CREATE TABLE txindex(
+  hash bigint not null,
+  txn int not null,
+  nexthash bigint not null,
+  nextn int not null,
+
+  primary key (hash, txn)
 );
 
 CREATE TABLE addr(
   hash bigint not null,
   blockheight bigint not null,
-  nfile bigint not null,
-  npos bigint not null,
-  intx bigint,
-  outtx bigint
+  txid bigint not null,
+  isin boolean not null
 );

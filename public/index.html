@@ -83,6 +83,13 @@
                   <div laiz:loop="out.addrs:k:v">
                     <div>{k}: {v:l}</div>
                   </div>
+                  <div laiz:ifel="out.nextHash" class="nextin">
+                    <div>nextin.hash: {out.nextHash:l}</div>
+                    <div>nextin.n: {out.nextN}</div>
+                  </div>
+                  <div laiz:else class="not-yet-redeemed">
+                    Not yet redeemed
+                  </div>
                 </div>
               </td>
             </tr>

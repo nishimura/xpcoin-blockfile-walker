@@ -97,6 +97,12 @@ function txsView($txs){
                 $obj->type = $dests[0];
                 $obj->addrs = $dests[1];
             }
+
+            if (strlen($out['nextin.hash'])){
+                $obj->nextHash = bin2hex($out['nextin.hash']);
+                $obj->nextN = toInt($out['nextin.n']);
+            }
+
             $o->vout[] = $obj;
         }
 

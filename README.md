@@ -6,8 +6,10 @@ XPCoin Blockfile Walker
 
 Depends: PHP5.6, db4
 
+### Setup Program
+
 ```
-sudo apt install php5.6-dev php5.6-fpm php5.6-bcmath php5.6-sqlite
+sudo apt install php5.6-dev php5.6-fpm php5.6-bcmath php5.6-sqlite php5.6-pgsql
 
 git clone https://github.com/nishimura/xpcoin-blockfile-walker.git
 wget http://download.oracle.com/berkeley-db/db-6.2.32.tar.gz
@@ -37,6 +39,39 @@ php5.6 path/to/composer.phar install
 
 ```
 
+### Setup Database
+
+PostgreSQL
+
+```
+createuser xpwalker -P
+# enter password
+createdb xpwalker -O xpwalker
+
+psql -U xpwalker -h localhost xpwalker < db/tables.sql
+
+php5.6 scanner.php 10
+php5.6 scanner.php 10000
+
+...
+
+psql -U xpwalker -h localhost xpwalker < db/indexes.sql
+
+```
+
+Sqlite
+
+(older than commit:8673050)
+
+```
+cp db/db-template.sqlite3 db/db.sqlite3
+
+php5.6 scanner.php 10
+php5.6 scanner.php 10000
+```
+
+build height index, address index, ...
+
 
 ## Usage
 
@@ -53,15 +88,3 @@ php5.6 -S localhost:8989 public/_bootstrap.php
 ```
 
 Needs writable cache directory and xp data directory.
-
-
-### Build Index
-
-```
-cp db/db-template.sqlite3 db/db.sqlite3
-
-php5.6 scanner.php 10
-php5.6 scanner.php 10000
-```
-
-build height index, address index, ...

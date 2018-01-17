@@ -74,17 +74,9 @@ class App
         return $ret;
     }
 
-    private function getPdo()
-    {
-        $pdo = new PDO(Config::$dsn);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-        return $pdo;
-    }
     private function queryHeight($limit = 100)
     {
-        $pdo = $this->getPdo();
+        $pdo = Config::getPdo();
         $sql = 'select * from bindex order by height desc limit ' . $limit;
 
         $prefix = packStr('blockindex');
@@ -106,18 +98,14 @@ class App
 
     private function queryAddr($query, $limit = 100)
     {
-        $pdo = $this->getPdo();
+        $pdo = Config::getPdo();
 
         $addr7 = hexdec(bin2hex(addrToBin7($query)));
         $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
 
         $prefix = packStr('tx');
         foreach ($pdo->query($sql) as $row){
-            if (isset($row->intx))
-                $tx7 = $row->intx;
-            else
-                $tx7 = $row->outtx;
-
+            $tx7 = $row->txid;
             $tx7 = dechex($tx7);
             if (strlen($tx7) % 2 == 1)
                 $tx7 = '0' . $tx7;

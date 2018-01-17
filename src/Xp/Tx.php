@@ -5,11 +5,15 @@ namespace Xpcoin\BlockFileWalker\Xp;
 use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Presenter;
 use Xpcoin\BlockFileWalker\Script;
+use Xpcoin\BlockFileWalker\Db;
 
 use function Xpcoin\BlockFileWalker\toAmount;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
 use function Xpcoin\BlockFileWalker\readFpVector;
 use function Xpcoin\BlockFileWalker\raw256toHexStr;
+use function Xpcoin\BlockFileWalker\toIntDb;
+use function Xpcoin\BlockFileWalker\packStr;
+use function Xpcoin\BlockFileWalker\decToBin;
 
 class Tx
 {
@@ -43,6 +47,28 @@ class Tx
         return !isset($this->values['vin']['coinbase']) &&
             count($this->values['vout']) >= 2 &&
             $this->values['vout'][0]['scriptPubKey']->toString() == '';
+    }
+
+    public static $pdo;
+    public static $bdb;
+    public static function getNextVin($prevrevhash, $prevn)
+    {
+        if (self::$pdo === null)
+            self::$pdo = Config::getPdo();
+        if (self::$bdb === null)
+            self::$bdb = new Db(Config::$datadir);
+
+        $query = 'SELECT nexthash, nextn from txindex where hash = %d and txn = %d';
+        $hash = toIntDb($prevrevhash);
+        $txprefix = packStr('tx');
+        foreach (self::$pdo->query(sprintf($query, $hash, $prevn)) as $row){
+            $range = $txprefix . decToBin($row->nexthash);
+            foreach (self::$bdb->range($range) as $key => $value){
+                $nextn = decToBin($row->nextn);
+                return [strrev(substr($key, 3)), $nextn];
+            }
+        }
+        return [null, null];
     }
 
     public static function isCoinbase($vin)
@@ -132,6 +158,12 @@ class Tx
             'txid' => strrev($hash),
         ];
         $data = $renew + $data;
+
+        foreach ($data['vout'] as $i => $out){
+            list($nexthash, $nextn) = self::getNextVin($hash, $i);
+            $data['vout'][$i]['nextin.hash'] = $nexthash;
+            $data['vout'][$i]['nextin.n'] = $nextn;
+        }
 
         return new self($data);
     }
