@@ -65,13 +65,11 @@ class App
 
     private function query($cls, $query)
     {
-        $ret = [];
         $f = [$cls, 'fromBinary'];
         foreach ($this->db->range($query) as $key => $value){
-            $block = $f($key, $value);
-            $ret[] = $block;
+            $row = $f($key, $value);
+            yield $key => $row;
         }
-        return $ret;
     }
 
     private function queryHeight($limit = 100)
