@@ -73,7 +73,9 @@ function txsView($txs){
         // TODO: refactoring, move to presenter
         if (isset($p->vin['coinbase'])){
             $o->data->coinbase = $p->vin['coinbase'];
-            $o->data->nSequence = toInt($p->vin['nSequence']);
+            $o->data->nSequence = bin2hex($p->vin['nSequence']);
+            if ($o->data->nSequence == 'ffffffff') // default
+                unset($o->data->nSequence);
         }else{
             $o->vin = [];
             foreach ($p->vin as $in){
@@ -84,7 +86,9 @@ function txsView($txs){
                 $obj->data->prevoutHash = bin2hex($in['prevout.hash']);
                 $obj->data->prevoutN = toInt($in['prevout.n']);
                 $obj->data->scriptSig = $in['scriptSig'];
-                $obj->data->nSequence = toInt($in['nSequence']);
+                $obj->data->nSequence = bin2hex($in['nSequence']);
+                if ($obj->data->nSequence == 'ffffffff') // default
+                    unset($obj->data->nSequence);
 
                 $dests = $in['scriptPubKey']->extractDestinations();
                 $obj->prevout->nValue = toAmount($in['nValue']);

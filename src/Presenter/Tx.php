@@ -11,12 +11,12 @@ class Tx
     const INT_KEYS = [
         'nVersion',
         'prevout.n',
-        'nSequence',
         'nextin.n',
     ];
     const HEX_KEYS = [
         'txid',
         'prevout.hash',
+        'nSequence',
         'scriptSig',
         'coinbase',
         'scriptPubKey',
