@@ -84,6 +84,8 @@ for ($i = 1; $i <= $max; $i++){
                         $hash7, $nHeight));
         }catch (\Exception $e){
             echo $e->getMessage();
+            $db->rollback();
+            $db->beginTransaction();
             foreach ($bdb->range($packIndex . $revhash) as $_key => $_value){
                 readStr($_value, 36);
                 $_nFile = hexdec(bin2hex(strrev(readStr($_value, 4))));
