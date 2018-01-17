@@ -58,6 +58,7 @@ function txsView($txs){
         $o = new \stdClass;
         $o->blockhash = $tx->toPresenter()->blockhash;
         $tx->values['details']->readNextVin();
+        $tx->values['details']->readPrevVout();
         $p = $tx->values['details']->toPresenter();
         $cols = [
             'txid', 'nVersion', 'nTime',
@@ -77,10 +78,21 @@ function txsView($txs){
             $o->vin = [];
             foreach ($p->vin as $in){
                 $obj = new \stdClass();
-                $obj->prevoutHash = bin2hex($in['prevout.hash']);
-                $obj->prevoutN = toInt($in['prevout.n']);
-                $obj->scriptSig = $in['scriptSig'];
-                $obj->nSequence = toInt($in['nSequence']);
+                $obj->data = new \stdClass();
+                $obj->prevout = new \stdClass();
+
+                $obj->data->prevoutHash = bin2hex($in['prevout.hash']);
+                $obj->data->prevoutN = toInt($in['prevout.n']);
+                $obj->data->scriptSig = $in['scriptSig'];
+                $obj->data->nSequence = toInt($in['nSequence']);
+
+                $dests = $in['scriptPubKey']->extractDestinations();
+                $obj->prevout->nValue = toAmount($in['nValue']);
+                if ($dests){
+                    $obj->prevout->type = $dests[0];
+                    $obj->prevout->addrs = $dests[1];
+                }
+
                 $o->vin[] = $obj;
             }
 

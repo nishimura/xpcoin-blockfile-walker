@@ -11,6 +11,7 @@ use function Xpcoin\BlockFileWalker\toAmount;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
 use function Xpcoin\BlockFileWalker\readFpVector;
 use function Xpcoin\BlockFileWalker\raw256toHexStr;
+use function Xpcoin\BlockFileWalker\toInt;
 use function Xpcoin\BlockFileWalker\toIntDb;
 use function Xpcoin\BlockFileWalker\packStr;
 use function Xpcoin\BlockFileWalker\decToBin;
@@ -48,6 +49,18 @@ class Tx
             $this->values['vout'][0]['scriptPubKey']->toString() == '';
     }
 
+    public function readPrevVout()
+    {
+        if (isset($this->values['vin']['coinbase']))
+            return;
+
+        foreach ($this->values['vin'] as $i => $in){
+            $vout = self::getPrevVout(
+                strrev($in['prevout.hash']), toInt($in['prevout.n']));
+            $this->values['vin'][$i] += $vout;
+        }
+    }
+
     public function readNextVin()
     {
         $hash = strrev($this->values['txid']);
@@ -78,6 +91,19 @@ class Tx
             }
         }
         return [null, null];
+    }
+
+    public static function getPrevVout($prevhash, $prevn)
+    {
+        if (self::$bdb === null)
+            self::$bdb = new Db(Config::$datadir);
+
+        $txprefix = packStr('tx');
+        $range = $txprefix . $prevhash;
+        foreach (self::$bdb->range($range) as $key => $value){
+            $txpos = DiskTxPos::fromBinary($key, $value);
+            return $txpos->values['details']->values['vout'][$prevn];
+        }
     }
 
     public static function isCoinbase($vin)
