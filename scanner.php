@@ -120,6 +120,18 @@ for ($i = 1; $i <= $max; $i++){
         $txhash = $tx->values['txid'];
         $txhash7 = toIntDb(strrev($txhash));
 
+        $hit = $nHeight == 0;
+        foreach ($bdb->range($packTx . strrev($txhash)) as $key => $value){
+            $hit = true;
+        }
+        if (!$hit){
+            // block is indexed, tx is not indexed, not main branch
+            fseek($fp, $nBlockPos + $blocksize);
+            $lastPos = ftell($fp);
+            continue 2;
+        }
+
+
         if (isset($tx->values['vin']['coinbase'])){
             // nothing
         }else{
