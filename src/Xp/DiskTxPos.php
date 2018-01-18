@@ -67,8 +67,13 @@ class DiskTxPos
         return $ret;
     }
 
+    public static $cacheMap = [];
     public static function fromBinary($key, $value)
     {
+        if (isset(self::$cacheMap[$key]))
+            return self::$cacheMap[$key];
+        $dbkey = $key;
+
         $prelen = strlen(packStr('tx'));
         readStr($key, $prelen);
 
@@ -98,6 +103,8 @@ class DiskTxPos
         $data['blockhash'] = strrev(Block::getHashFromPos(
             [toInt($data['pos.nFile']), toInt($data['pos.nBlockPos'])]));
 
-        return new self($keybin, $data);
+        $obj = new self($keybin, $data);
+        self::$cacheMap[$dbkey] = $obj;
+        return $obj;
     }
 }

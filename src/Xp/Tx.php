@@ -117,9 +117,15 @@ class Tx
         return true;
     }
 
+    public static $cacheMap = [];
     public static function fromBinary($pos)
     {
         list($nFile, $nBlockPos, $nTxPos) = $pos;
+
+        $cacheKey = "$nFile:$nBlockPos:$nTxPos";
+        if (isset(self::$cacheMap[$cacheKey]))
+            return self::$cacheMap[$cacheKey];
+
         $file = Config::$datadir . '/' . self::FILE;
         $file = sprintf($file, $nFile);
 
@@ -129,12 +135,23 @@ class Tx
 
         $ret = self::readFp($fp);
         fclose($fp);
+
+        self::$cacheMap[$cacheKey] = $ret;
+
         return $ret;
     }
 
+    public static $cacheFpMap = []; // [pos => [$tx, $nextPos]]
     public static function readFp($fp)
     {
         $start = ftell($fp);
+
+        if (isset(self::$cacheFpMap[$start])){
+            list($tx, $nextpos) = self::$cacheFpMap[$start];
+            fseek($fp, $nextpos);
+            return $tx;
+        }
+
         $data = [];
 
         $chunks = [
@@ -194,6 +211,10 @@ class Tx
         ];
         $data = $renew + $data;
 
-        return new self($data);
+        $obj = new self($data);
+
+        self::$cacheFpMap[$start] = [$obj, $end];
+
+        return $obj;
     }
 }

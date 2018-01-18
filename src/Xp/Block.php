@@ -102,9 +102,15 @@ class Block
         return $hash;
     }
 
+    public static $cacheMap = [];
     public static function getHashFromPos($pos)
     {
         list($nFile, $nBlockPos) = $pos;
+
+        $cacheKey = "$nFile:$nBlockPos";
+        if (isset(self::$cacheMap[$cacheKey]))
+            return self::$cacheMap[$cacheKey];
+
         $file = Config::$datadir . '/' . self::FILE;
         $file = sprintf($file, $nFile);
 
@@ -113,6 +119,7 @@ class Block
         fseek($fp, $nBlockPos);
 
         $ret = self::getHashFromFp($fp);
+        self::$cacheMap[$cacheKey] = $ret;
 
         fclose($fp);
 

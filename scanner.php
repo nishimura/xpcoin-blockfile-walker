@@ -40,11 +40,6 @@ function readInt32(&$str)
 $packIndex = packStr('blockindex');
 $packTx = packStr('tx');
 
-$posMap = []; // for seek prev 100 block
-
-$txMap = []; // [pos => [$tx, $nextPos]]
-$diskTxPosMap = []; // [bdb key => $tx]
-
 $max = 1000;
 if (isset($argv[1]))
     $max = $argv[1];
@@ -123,16 +118,7 @@ for ($i = 1; $i <= $max; $i++){
     $size = readCompactSizeRaw($fp);
     //var_dump($size);
     for ($j = 0; $j < $size; $j++){
-        $txpos = ftell($fp);
-        if (isset($txMap[$txpos])){
-            list($tx, $txnextpos) = $txMap[$txpos];
-            fseek($fp, $txnextpos);
-        }else{
-            $tx = Xp\Tx::readFp($fp);
-            $txnextpos = ftell($fp);
-            $txMap[$txpos] = [$tx, $txnextpos];
-        }
-
+        $tx = Xp\Tx::readFp($fp);
         $txhash = $tx->values['txid'];
         $txhash7 = toIntDb(strrev($txhash));
 
@@ -159,13 +145,7 @@ for ($i = 1; $i <= $max; $i++){
                 $revhash = strrev($prevHash);
                 $query = $packTx . $revhash;
                 foreach ($bdb->range($query) as $key => $value){
-                    if (isset($diskTxPosMap[$key])){
-                        $prevtx = $diskTxPosMap[$key];
-                    }else{
-                        $prevtx = Xp\DiskTxPos::fromBinary($key, $value);
-                        $diskTxPosMap[$key] = $prevtx;
-                    }
-
+                    $prevtx = Xp\DiskTxPos::fromBinary($key, $value);
                     if (!isset($prevtx->values['details']->values['vout'][$prevN]))
                         break;
                     $out = $prevtx->values['details']->values['vout'][$prevN];
