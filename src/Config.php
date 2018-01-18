@@ -46,6 +46,11 @@ class Config
             self::$ADDRESS_PREFIX = ['X'];
             self::$MESSAGE = 'b4f8e2e5';
         }
+
+        if (isset($config['cache_limit']))
+            self::$CACHE_LIMIT = $config['cache_limit'];
+        if (isset($config['cache_truncate']))
+            self::$CACHE_TRUNCATE = $config['cache_truncate'];
     }
 
     public static function getPdo()
