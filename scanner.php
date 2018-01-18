@@ -78,6 +78,7 @@ for ($i = 1; $i <= $max; $i++){
 
         $hash7 = toIntDb($revhash);
 
+        $update = false;
         try {
             $db->query(
                 sprintf('INSERT INTO bindex values (%d, %d)',
@@ -96,6 +97,7 @@ for ($i = 1; $i <= $max; $i++){
                     $lastPos = ftell($fp);
                     continue 3;
                 }else{
+                    $update = true;
                     $db->beginTransaction();
                     $db->query(sprintf('UPDATE bindex set height = %d where hash = %d',
                                        $_nHeight, $hash7));
@@ -157,9 +159,28 @@ for ($i = 1; $i <= $max; $i++){
                         $addr = $addr->toAddressBin();
                         $revaddr = strrev($addr);
                         $addr7 = toIntDb($revaddr);
+
+                        $hit = false;
+                        if ($update){
+                            $old = $db->query(
+                                sprintf('SELECT * FROM addr where hash = %d and blockheight = %d and txid = %d and isin = true',
+                                        $addr7, $nHeight, $txhash7));
+                            foreach ($old as $o){
+                                $hit = true;
+                            }
+                        }
+
+                        if (!$hit)
+                            $db->query(
+                                sprintf('INSERT INTO addr values (%d, %d, %d, true)',
+                                        $addr7, $nHeight, $txhash7));
+                    }
+                    $hit = false;
+                    if ($update){
                         $db->query(
-                            sprintf('INSERT INTO addr values (%d, %d, %d, true)',
-                                    $addr7, $nHeight, $txhash7));
+                            sprintf('DELETE FROM txindex where hash = %d and txn =  %d',
+                                    toIntDb($revhash), $prevN));
+
                     }
                     $db->query(
                         sprintf('INSERT INTO txindex values(%d, %d, %d, %d)',
