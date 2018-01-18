@@ -102,12 +102,17 @@ class App
         $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
 
         $prefix = packStr('tx');
+        $inOrOut = [];
         foreach ($pdo->query($sql) as $row){
             $tx7 = $row->txid;
             $tx7 = dechex($tx7);
             if (strlen($tx7) % 2 == 1)
                 $tx7 = '0' . $tx7;
             $txid = hex2bin($tx7);
+
+            if (isset($inOrOut[$txid]))
+                continue;
+            $inOrOut[$txid] = true;
 
             $q = $prefix .$txid;
             foreach ($this->db->range($q) as $key => $value){
