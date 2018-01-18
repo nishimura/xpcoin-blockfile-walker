@@ -60,7 +60,7 @@ psql -U xpwalker -h localhost xpwalker < db/indexes.sql
 
 ```
 
-If out of memory, try this:
+If memory size error, try this:
 
 ```
 php5.6 -d memory_limit=1024M scanner.php 1000000
