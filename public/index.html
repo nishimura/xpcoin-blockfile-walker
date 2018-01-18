@@ -19,6 +19,9 @@
       </form>
     </div>
 
+    <div class="content" id="amount">
+    </div>
+
     <div>
       <div laiz:if="blocks" laiz:loop="blocks:block">
         <div style="padding-left: 16px;">
@@ -49,6 +52,7 @@
       </div>
 
 
+      <script>var amount = 0;</script>
 
       <div laiz:if="txs" laiz:loop="txs:tx">
         <div style="padding-left: 16px;">
@@ -100,6 +104,7 @@
                     </div>
                     <div laiz:else class="not-yet-redeemed">
                       Not yet redeemed
+                      <script>amount += {out.nValue};</script>
                     </div>
                   </div>
                 </div>
@@ -109,6 +114,12 @@
         </div>
       </div>
 
+      <script>
+        if (amount > 0){
+          document.getElementById('amount').innerHTML =
+            'Not yet redeemed TOTAL: ' + amount + ' (limit 200 tx)<br><br>';
+        }
+      </script>
 
     </div>
 

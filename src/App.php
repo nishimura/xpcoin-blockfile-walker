@@ -94,7 +94,7 @@ class App
     }
 
 
-    private function queryAddr($query, $limit = 100)
+    private function queryAddr($query, $limit = 200)
     {
         $pdo = Config::getPdo();
 
