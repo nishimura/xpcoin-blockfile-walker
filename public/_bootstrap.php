@@ -14,15 +14,12 @@ require_once  "$dir/vendor/autoload.php";
 Config::set("$dir/config.ini");
 
 $q = null;
-$full = null;
 if (isset($_GET['q']))
     $q = $_GET['q'];
-if (isset($_GET['full']))
-    $full = $_GET['full'];
 
 $app = new Xpcoin\BlockFileWalker\App($dir);
 //$app->run($q)->show('public', 'cache');
-$params = $app->run($q, $full)->getParams();
+$params = $app->run($q)->getParams();
 
 
 
@@ -57,7 +54,6 @@ function blocksView($blocks){
 }
 
 function txsView($txs){
-    $amount = 0;
     foreach ($txs as $tx){
         $o = new \stdClass;
         $o->blockhash = $tx->toPresenter()->blockhash;
@@ -110,7 +106,6 @@ function txsView($txs){
         foreach ($p->vout as $out){
             $obj = new \stdClass();
             $obj->nValue = toAmount($out['nValue']);
-            $amount += $obj->nValue;
             $obj->scriptPubKey = $out['scriptPubKey']->toString();
 
             $obj->addrs = [];
@@ -129,13 +124,6 @@ function txsView($txs){
         }
 
         yield $o;
-    }
-
-    global $params;
-    if (isset($params->address)){
-        $ret = new \stdClass();
-        $ret->totalAmount = $amount;
-        yield $ret;
     }
 }
 

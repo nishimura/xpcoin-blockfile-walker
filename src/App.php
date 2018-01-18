@@ -21,7 +21,7 @@ class App
         $this->db = new Db(Config::$datadir);
     }
 
-    public function run($query = null, $full = null)
+    public function run($query = null)
     {
         $p = $this->params;
         $p->query = $query;
@@ -33,10 +33,7 @@ class App
         }
         if (in_array($query[0], Config::$ADDRESS_PREFIX)){
             $p->blocks = [];
-            $p->txs = $this->queryAddr($query, $full);
-            if (!$full){
-                $p->address = $query;
-            }
+            $p->txs = $this->queryAddr($query);
             return $this;
         }
 
@@ -97,25 +94,12 @@ class App
     }
 
 
-    private function queryAddr($query, $full, $limit = 100)
+    private function queryAddr($query, $limit = 100)
     {
         $pdo = Config::getPdo();
 
         $addr7 = hexdec(bin2hex(addrToBin7($query)));
-        if ($full){
-            $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
-        }else{
-            $sql = sprintf('
-select * from addr
-left outer join txindex
-  on addr.txid = txindex.hash
-where addr.hash = %d
-  and txindex.hash is null
-  and isin = false
-order by blockheight desc
-limit %d
-', $addr7, $limit);
-        }
+        $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
 
         $prefix = packStr('tx');
         $inOrOut = [];
