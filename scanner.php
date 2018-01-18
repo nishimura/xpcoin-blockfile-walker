@@ -92,9 +92,9 @@ for ($i = 1; $i <= $max; $i++){
                 $_nHeight = hexdec(bin2hex(strrev(readStr($_value, 4))));
                 echo "nFile:$_nFile, nPos:$_nPos\n";
                 if ($_nPos != $nBlockPos){
-                    fseek($fp, $nblockPos + $blocksize);
+                    fseek($fp, $nBlockPos + $blocksize);
                     $lastPos = ftell($fp);
-                    continue 2;
+                    continue 3;
                 }else{
                     $db->beginTransaction();
                     $db->query(sprintf('UPDATE bindex set height = %d where hash = %d',
