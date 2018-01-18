@@ -13,6 +13,24 @@ class Config
     public static $ADDRESS_PREFIX;
     public static $MESSAGE;
 
+
+    public static $CACHE_LIMIT = 3000;
+    public static $CACHE_TRUNCATE = 2000;
+
+    public static function truncateCache(&$kv){
+        if (count($kv) < self::$CACHE_LIMIT)
+            return;
+
+        $i = 0;
+        foreach ($kv as $k => $_){
+            unset($kv[$k]);
+            $i++;
+
+            if ($i > self::$CACHE_TRUNCATE)
+                break;
+        }
+    }
+
     public static function set($file)
     {
         $config = parse_ini_file($file);

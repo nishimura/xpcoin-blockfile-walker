@@ -120,6 +120,7 @@ class Block
 
         $ret = self::getHashFromFp($fp);
         self::$cacheMap[$cacheKey] = $ret;
+        Config::truncateCache(self::$cacheMap);
 
         fclose($fp);
 

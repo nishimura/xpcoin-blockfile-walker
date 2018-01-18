@@ -3,6 +3,7 @@
 namespace Xpcoin\BlockFileWalker\Xp;
 
 use Xpcoin\BlockFileWalker\Presenter;
+use Xpcoin\BlockFileWalker\Config;
 
 use function Xpcoin\BlockFileWalker\toAmount;
 use function Xpcoin\BlockFileWalker\walkChunk;
@@ -105,6 +106,8 @@ class DiskTxPos
 
         $obj = new self($keybin, $data);
         self::$cacheMap[$dbkey] = $obj;
+        Config::truncateCache(self::$cacheMap);
+
         return $obj;
     }
 }

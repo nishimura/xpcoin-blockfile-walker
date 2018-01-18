@@ -137,6 +137,7 @@ class Tx
         fclose($fp);
 
         self::$cacheMap[$cacheKey] = $ret;
+        Config::truncateCache(self::$cacheMap);
 
         return $ret;
     }
@@ -214,6 +215,7 @@ class Tx
         $obj = new self($data);
 
         self::$cacheFpMap[$start] = [$obj, $end];
+        Config::truncateCache(self::$cacheFpMap);
 
         return $obj;
     }

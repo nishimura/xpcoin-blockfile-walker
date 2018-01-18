@@ -61,6 +61,7 @@ class Db
 
             $i++;
         }
+        Config::truncateCache(self::$cacheMap);
     }
 
     public function __destruct()
