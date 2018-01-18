@@ -41,7 +41,7 @@ php5.6 path/to/composer.phar install
 
 ### Setup Database
 
-PostgreSQL
+#### PostgreSQL
 
 ```
 createuser xpwalker -P
@@ -52,6 +52,7 @@ psql -U xpwalker -h localhost xpwalker < db/tables.sql
 
 php5.6 scanner.php 10
 php5.6 scanner.php 10000
+php5.6 scanner.php 1000000
 
 ...
 
@@ -59,7 +60,21 @@ psql -U xpwalker -h localhost xpwalker < db/indexes.sql
 
 ```
 
-Sqlite
+If out of memory, try this:
+
+```
+php5.6 -d memory_limit=1024M scanner.php 1000000
+```
+
+or config.ini
+
+```
+cache_limit = 1500
+cache_truncate 500
+```
+
+
+#### Sqlite
 
 (older than commit:8673050)
 
