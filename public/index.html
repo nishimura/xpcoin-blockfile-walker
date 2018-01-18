@@ -19,6 +19,15 @@
       </form>
     </div>
 
+    <div laiz:if="address" class="content">
+      <div>
+        Total Amount: <span id="amount">...</span>
+      </div>
+      <div>
+        Show full: <a href="?q={address}&full=1">{address}</a> (limit 100)
+      </div>
+    </div>
+
     <div>
       <div laiz:if="blocks" laiz:loop="blocks:block">
         <div style="padding-left: 16px;">
@@ -51,7 +60,13 @@
 
 
       <div laiz:if="txs" laiz:loop="txs:tx">
-        <div style="padding-left: 16px;">
+        <div laiz:ifel="tx.totalAmount">
+          <script>
+            document.getElementById('amount').innerHTML = '{tx.totalAmount}';
+          </script>
+        </div>
+
+        <div laiz:else style="padding-left: 16px;">
           <table style="border-bottom: 1px solid #999; margin-bottom: 2em;">
             <tr>
               <th>blockhash &nbsp;</th>
