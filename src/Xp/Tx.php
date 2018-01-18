@@ -85,7 +85,7 @@ class Tx
         $txprefix = packStr('tx');
         foreach (self::$pdo->query(sprintf($query, $hash, $prevn)) as $row){
             $range = $txprefix . decToBin($row->nexthash);
-            foreach (self::$bdb->range($range) as $key => $value){
+            foreach (self::$bdb->range($range, 1) as $key => $value){
                 $nextn = decToBin($row->nextn);
                 return [strrev(substr($key, 3)), $nextn];
             }
@@ -100,7 +100,7 @@ class Tx
 
         $txprefix = packStr('tx');
         $range = $txprefix . $prevhash;
-        foreach (self::$bdb->range($range) as $key => $value){
+        foreach (self::$bdb->range($range, 1) as $key => $value){
             $txpos = DiskTxPos::fromBinary($key, $value);
             return $txpos->values['details']->values['vout'][$prevn];
         }

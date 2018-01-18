@@ -32,8 +32,18 @@ class Db
         $this->cursor = $cursor;
     }
 
+    public static $cacheMap = [];
+
     public function range($prefix, $limit = 10)
     {
+        if (isset(self::$cacheMap[$prefix][$limit])){
+            foreach (self::$cacheMap[$prefix][$limit] as $k => $v)
+                yield $k => $v;
+            return;
+        }
+
+        self::$cacheMap[$prefix][$limit] = [];
+
         $key = $prefix;
         $value = 0;
 
@@ -44,6 +54,7 @@ class Db
                 break;
             }
 
+            self::$cacheMap[$prefix][$limit][$key] = $value;
             yield $key => $value;
 
             $ret = $this->cursor->get($key, $value, DB_NEXT);

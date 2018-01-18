@@ -69,7 +69,7 @@ for ($i = 1; $i <= $max; $i++){
     $blockhash = strrev($revhash);
     $query = $packIndex . $revhash;
     $hit = false;
-    foreach ($bdb->range($query) as $key => $value){
+    foreach ($bdb->range($query, 1) as $key => $value){
         $hit = true;
         readStr($value, 36);
         $nFile = readInt32($value);
@@ -85,7 +85,7 @@ for ($i = 1; $i <= $max; $i++){
         }catch (\Exception $e){
             echo $e->getMessage();
             $db->rollback();
-            foreach ($bdb->range($packIndex . $revhash) as $_key => $_value){
+            foreach ($bdb->range($packIndex . $revhash, 1) as $_key => $_value){
                 readStr($_value, 36);
                 $_nFile = hexdec(bin2hex(strrev(readStr($_value, 4))));
                 $_nPos = hexdec(bin2hex(strrev(readStr($_value, 4))));
@@ -123,7 +123,7 @@ for ($i = 1; $i <= $max; $i++){
         $txhash7 = toIntDb(strrev($txhash));
 
         $hit = $nHeight == 0;
-        foreach ($bdb->range($packTx . strrev($txhash)) as $key => $value){
+        foreach ($bdb->range($packTx . strrev($txhash), 1) as $key => $value){
             $hit = true;
         }
         if (!$hit){
@@ -144,7 +144,7 @@ for ($i = 1; $i <= $max; $i++){
 
                 $revhash = strrev($prevHash);
                 $query = $packTx . $revhash;
-                foreach ($bdb->range($query) as $key => $value){
+                foreach ($bdb->range($query, 1) as $key => $value){
                     $prevtx = Xp\DiskTxPos::fromBinary($key, $value);
                     if (!isset($prevtx->values['details']->values['vout'][$prevN]))
                         break;
