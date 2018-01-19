@@ -14,12 +14,15 @@ require_once  "$dir/vendor/autoload.php";
 Config::set("$dir/config.ini");
 
 $q = null;
+$full = null;
 if (isset($_GET['q']))
     $q = $_GET['q'];
+if (isset($_GET['full']))
+    $full = $_GET['full'];
 
 $app = new Xpcoin\BlockFileWalker\App($dir);
 //$app->run($q)->show('public', 'cache');
-$params = $app->run($q)->getParams();
+$params = $app->run($q, $full)->getParams();
 
 
 

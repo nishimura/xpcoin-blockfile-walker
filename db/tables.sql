@@ -33,3 +33,10 @@ CREATE INDEX txindex_txhash_btree on txindex (txhash);
 -- insert into txindex values('bbb'::bytea, 3, ARRAY[]::bytea[], ARRAY['addr1'::bytea], ARRAY[]::bytea[]);
 
 -- select * from txindex where outaddr @> ARRAY['addr1'::bytea] AND nexthash[array_position(outaddr, 'addr1'::bytea)] is null order by height desc;
+
+
+-- REAL SAMPLE
+--
+-- height: 1797 - 1798 address
+-- select * from txindex where inaddr @> ARRAY[E'\\x6f4be8555a0aef70'::bytea] or outaddr @> ARRAY[E'\\x6f4be8555a0aef70'::bytea];
+--

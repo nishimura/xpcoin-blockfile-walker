@@ -23,7 +23,7 @@ class App
         $this->db = new Db(Config::$datadir);
     }
 
-    public function run($query = null)
+    public function run($query = null, $full = null)
     {
         $p = $this->params;
         $p->query = $query;
@@ -34,8 +34,12 @@ class App
             return $this;
         }
         if (in_array($query[0], Config::$ADDRESS_PREFIX)){
+            $p->address = $query;
             $p->blocks = [];
-            $p->txs = $this->queryAddr($query);
+            $p->txs = $this->queryAddr($query, $full);
+            if (!$full)
+                $p->FULL_LINK = true;
+
             return $this;
         }
 
@@ -94,18 +98,26 @@ class App
     }
 
 
-    private function queryAddr($query, $limit = 200)
+    private function queryAddr($query, $full, $limit = 200)
     {
         $pdo = Config::getPdo();
 
         $addr = toByteaDb(strrev(addrToBin($query)));
+
+        if ($full){
+            $sql = '
+select txhash from txindex
+where outaddr @> ARRAY[?::bytea] or inaddr @> ARRAY[?::bytea]
+order by height desc
+limit ' . $limit;
+        }else{
         $sql = '
 select txhash from txindex
 where outaddr @> ARRAY[?::bytea]
   and nexthash[array_position(outaddr, ?::bytea)] is null
 order by height desc
 limit ' . $limit;
-
+        }
         $stmt = $pdo->prepare($sql);
         $stmt->bindColumn(1, $txhash);
         $stmt->bindParam(1, $addr, PDO::PARAM_LOB);
@@ -115,7 +127,7 @@ limit ' . $limit;
         $prefix = packStr('tx');
         $inOrOut = [];
         while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
-            $q = $prefix .$txhash;
+            $q = $prefix . $txhash;
             foreach ($this->db->range($q) as $key => $value){
                 $tx = Xp\DiskTxPos::fromBinary($key, $value);
                 yield $tx;
