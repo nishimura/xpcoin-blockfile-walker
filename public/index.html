@@ -19,7 +19,16 @@
       </form>
     </div>
 
-    <div class="content" id="amount">
+    <div laiz:if="address">
+      <div class="content">
+        <div>{address}</div>
+        <div laiz:if="FULL_LINK">
+          These transactions are including only unspent.
+          <a href="?q={address}&full=1">show spent</a>
+        </div>
+      </div>
+      <div class="content" id="amount" laiz:if="FULL_LINK">
+      </div>
     </div>
 
     <div>
@@ -103,7 +112,7 @@
                       <div>nextin.n: {out.nextN}</div>
                     </div>
                     <div laiz:else class="not-yet-redeemed">
-                      Not yet redeemed
+                      spent
                       <script>amount += {out.nValue};</script>
                     </div>
                   </div>
@@ -115,7 +124,7 @@
       </div>
 
       <script>
-        if (amount > 0){
+        if (amount > 0 && document.getElementById('amount')){
           document.getElementById('amount').innerHTML =
             'Not yet redeemed TOTAL: ' + amount + ' (limit 200 tx)<br><br>';
         }

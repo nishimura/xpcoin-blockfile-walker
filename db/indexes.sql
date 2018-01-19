@@ -1,4 +1,5 @@
-CREATE INDEX bindex_height on bindex(height);
+CREATE INDEX bindex_height_btree on bindex(height);
 
-CREATE INDEX addr_hash on addr(hash);
-CREATE INDEX addr_hash_blockheight on addr(hash, blockheight);
+CREATE INDEX txindex_height_btree on txindex (height);
+CREATE INDEX txindex_inaddr_gin on txindex using GIN (inaddr);
+CREATE INDEX txindex_outaddr_gin on txindex using GIN (outaddr);

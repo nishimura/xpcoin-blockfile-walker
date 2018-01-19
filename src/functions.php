@@ -135,17 +135,16 @@ function readFpVector($fp)
     return fread($fp, $size);
 }
 
-function addrToBin7($addr)
+function addrToBin($addr)
 {
     $base58 = new Base58();
     $bin = $base58->decode($addr);
-    $rev = strrev($bin);
-    return readStr($rev, 7);
+    return $bin;
 }
 
-function toIntDb($str)
+function toByteaDb($str)
 {
-    return hexdec(bin2hex(readStr($str, 7)));
+    return readStr($str, 8);
 }
 
 function decToBin($dec)
