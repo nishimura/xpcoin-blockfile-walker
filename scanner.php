@@ -191,15 +191,15 @@ values(?, ?, ARRAY[%s]::bytea[], ARRAY[%s]::bytea[],
             implode(',', array_fill(0, $inlen, '?')),
             implode(',', array_fill(0, $outlen, '?')));
         $stmt = $db->prepare($sql);
-        $stmt->bindParam(1, $txhashdb, PDO::PARAM_LOB);
-        $stmt->bindParam(2, $nHeight, PDO::PARAM_INT);
+        $stmt->bindValue(1, $txhashdb, PDO::PARAM_LOB);
+        $stmt->bindValue(2, $nHeight, PDO::PARAM_INT);
         $inc = 3;
         foreach ($vin as $k => $v){
-            $stmt->bindParam($inc, $v, PDO::PARAM_LOB);
+            $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
             $inc++;
         }
         foreach ($vout as $k => $v){
-            $stmt->bindParam($inc, $v, PDO::PARAM_LOB);
+            $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
             $inc++;
         }
         $stmt->execute();
@@ -214,9 +214,9 @@ set nexthash[%d] = ?,
     nextn[%d] = ?
 where txhash = ?
 ', $prevn, $prevn));
-            $stmt->bindParam(1, $next, PDO::PARAM_LOB);
-            $stmt->bindParam(2, $nextn, PDO::PARAM_INT);
-            $stmt->bindParam(3, $prev, PDO::PARAM_LOB);
+            $stmt->bindValue(1, $next, PDO::PARAM_LOB);
+            $stmt->bindValue(2, $nextn, PDO::PARAM_INT);
+            $stmt->bindValue(3, $prev, PDO::PARAM_LOB);
             $stmt->execute();
         }
     }
