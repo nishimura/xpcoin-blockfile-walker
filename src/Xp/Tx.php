@@ -6,15 +6,18 @@ use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Presenter;
 use Xpcoin\BlockFileWalker\Script;
 use Xpcoin\BlockFileWalker\Db;
+use Xpcoin\BlockFileWalker\Exception;
 
 use function Xpcoin\BlockFileWalker\toAmount;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
 use function Xpcoin\BlockFileWalker\readFpVector;
 use function Xpcoin\BlockFileWalker\raw256toHexStr;
 use function Xpcoin\BlockFileWalker\toInt;
-use function Xpcoin\BlockFileWalker\toIntDb;
+use function Xpcoin\BlockFileWalker\toByteaDb;
 use function Xpcoin\BlockFileWalker\packStr;
 use function Xpcoin\BlockFileWalker\decToBin;
+
+use PDO;
 
 class Tx
 {
@@ -80,14 +83,28 @@ class Tx
         if (self::$bdb === null)
             self::$bdb = new Db(Config::$datadir);
 
-        $query = 'SELECT nexthash, nextn from txindex where hash = %d and txn = %d';
-        $hash = toIntDb($prevrevhash);
+        $query = 'SELECT nexthash[%d], nextn[%d] from txindex where txhash = ?';
+        $prevn++;
+        $query = sprintf($query, $prevn, $prevn);
+        $hash = toByteaDb($prevrevhash);
         $txprefix = packStr('tx');
-        foreach (self::$pdo->query(sprintf($query, $hash, $prevn)) as $row){
-            $range = $txprefix . decToBin($row->nexthash);
+        $stmt = self::$pdo->prepare($query);
+        $stmt->bindColumn(1, $nexthash);
+        $stmt->bindColumn(2, $nextn, PDO::PARAM_INT);
+        $stmt->bindParam(1, $hash, PDO::PARAM_LOB);
+        $stmt->execute();
+
+        while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            if ($nexthash === null || $nextn === null){
+                if ($nexthash || $nextn)
+                    throw new Exception('Scan Bug');
+                return [null, null];
+            }
+
+            $range = $txprefix . $nexthash;
             foreach (self::$bdb->range($range, 1) as $key => $value){
-                $nextn = decToBin($row->nextn);
-                return [strrev(substr($key, 3)), $nextn];
+                $n = decToBin($nextn);
+                return [strrev(substr($key, 3)), $n];
             }
         }
         return [null, null];

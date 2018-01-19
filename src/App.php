@@ -3,7 +3,9 @@
 namespace Xpcoin\BlockFileWalker;
 
 use Laiz\Template\Parser;
-use function Xpcoin\BlockFileWalker\addrToBin7;
+use function Xpcoin\BlockFileWalker\addrToBin;
+use function Xpcoin\BlockFileWalker\toByteaDb;
+
 use PDO;
 
 class App
@@ -75,17 +77,15 @@ class App
     private function queryHeight($limit = 100)
     {
         $pdo = Config::getPdo();
-        $sql = 'select * from bindex order by height desc limit ' . $limit;
+        $sql = 'select bhash from bindex order by height desc limit ' . $limit;
 
         $prefix = packStr('blockindex');
-        foreach ($pdo->query($sql) as $row){
-            $hash7 = $row->hash;
-            $hash7 = dechex($hash7);
-            if (strlen($hash7) % 2 == 1)
-                $hash7 = '0' . $hash7;
-            $hashid = hex2bin($hash7);
 
-            $q = $prefix .$hashid;
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindColumn(1, $bhash);
+        $stmt->execute();
+        while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            $q = $prefix . $bhash;
             foreach ($this->db->range($q) as $key => $value){
                 $block = Xp\DiskBlockIndex::fromBinary($key, $value);
                 yield $block;
@@ -98,23 +98,24 @@ class App
     {
         $pdo = Config::getPdo();
 
-        $addr7 = hexdec(bin2hex(addrToBin7($query)));
-        $sql = sprintf('select * from addr where hash = %d order by blockheight desc limit ' . $limit, $addr7);
+        $addr = toByteaDb(strrev(addrToBin($query)));
+        $sql = '
+select txhash from txindex
+where outaddr @> ARRAY[?::bytea]
+  and nexthash[array_position(outaddr, ?::bytea)] is null
+order by height desc
+limit ' . $limit;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindColumn(1, $txhash);
+        $stmt->bindParam(1, $addr, PDO::PARAM_LOB);
+        $stmt->bindParam(2, $addr, PDO::PARAM_LOB);
+        $stmt->execute();
 
         $prefix = packStr('tx');
         $inOrOut = [];
-        foreach ($pdo->query($sql) as $row){
-            $tx7 = $row->txid;
-            $tx7 = dechex($tx7);
-            if (strlen($tx7) % 2 == 1)
-                $tx7 = '0' . $tx7;
-            $txid = hex2bin($tx7);
-
-            if (isset($inOrOut[$txid]))
-                continue;
-            $inOrOut[$txid] = true;
-
-            $q = $prefix .$txid;
+        while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            $q = $prefix .$txhash;
             foreach ($this->db->range($q) as $key => $value){
                 $tx = Xp\DiskTxPos::fromBinary($key, $value);
                 yield $tx;
