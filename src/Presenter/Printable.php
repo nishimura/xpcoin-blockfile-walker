@@ -108,7 +108,7 @@ trait Printable
         else if (in_array($k, self::TIME_KEYS))
             return date('Y-m-d H:i:s', toInt($v));
         else if (in_array($k, self::AMOUNT_KEYS))
-            return toAmount($v);
+            return number_format(toAmount($v), 6);
 
         return null;
     }
