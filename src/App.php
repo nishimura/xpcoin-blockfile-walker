@@ -66,6 +66,8 @@ class App
         $tmpl->addBehavior('l',
                            'Xpcoin\BlockFileWalker\Presenter\Filter::toHashLink',
                            true);
+        $tmpl->addBehavior('a',
+                           'Xpcoin\BlockFileWalker\Presenter\Filter::toAmount');
         $tmpl->setFile('index.html')->show($params);
     }
 

@@ -9,7 +9,7 @@ function startsWith($haystack, $needle){
 
 function toAmount($bin)
 {
-    return toInt($bin) / 1000000;
+    return toInt($bin) / 1000000.0;
 }
 
 function reverse8($str){

@@ -22,4 +22,9 @@ class Filter
 
         return '<a href="?q=' . $str . '">' . $str . '</a>';
     }
+
+    public static function toAmount($str)
+    {
+        return number_format($str, 6);
+    }
 }

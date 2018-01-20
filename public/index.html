@@ -61,7 +61,7 @@
       </div>
 
 
-      <script>var amount = 0;</script>
+      <script>var amount = 0.0;</script>
 
       <div laiz:if="txs" laiz:loop="txs:tx">
         <div style="padding-left: 16px;">
@@ -82,7 +82,7 @@
                   <div>{name}: {row:l}</div>
                 </div>
                 <div class="amount">
-                  prevout.nValue: {in.prevout.nValue}
+                  prevout.nValue: {in.prevout.nValue:a}
                 </div>
                 <div>
                   prevout.addrs: {in.prevout.type} 
@@ -97,7 +97,7 @@
               <th>vout:{i}</th>
               <td>
                 <div class="amount">
-                  nValue: {out.nValue}
+                  nValue: {out.nValue:a}
                 </div>
                 <div>
                   <div>scryptPubKey: {out.scriptPubKey}</div>
