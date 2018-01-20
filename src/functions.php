@@ -122,9 +122,9 @@ function readCompactSizeRaw($fp)
     if ($size == 253)
         return hexdec(bin2hex(strrev(fread($fp, 2))));
     if ($size == 254)
-        return hexdec(bin2hex(strrev(freed($fp, 4))));
+        return hexdec(bin2hex(strrev(fread($fp, 4))));
 
-    return hexdec(bin2hex(strrev(freed($fp, 8))));
+    return hexdec(bin2hex(strrev(fread($fp, 8))));
 }
 
 function readFpVector($fp)
