@@ -130,6 +130,10 @@ limit ' . $limit;
         $prefix = packStr('tx');
         $inOrOut = [];
         while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            if (isset($inOrOut[$txhash]))
+                continue;
+            $inOrOut[$txhash] = true;
+
             $q = $prefix . $txhash;
             foreach ($this->db->range($q) as $key => $value){
                 $tx = Xp\DiskTxPos::fromBinary($key, $value);
