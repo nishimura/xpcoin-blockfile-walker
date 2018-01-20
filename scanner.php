@@ -120,7 +120,15 @@ for ($i = 1; $i <= $max; $i++){
 
             if ($nBlockPos != $_nBlockPos ||
                 $nTxPos != $_nTxPos){
-                throw new Exception("Bug? $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
+                /*
+                 * Non-main coinbase transaction hash is same as
+                 * main coinbase transaction hash by stake.
+                 * Indexed tx hash is main.
+                 */
+                fseek($fp, $nBlockPos + $blocksize);
+                continue 2;
+
+                //throw new Exception("Debug stop: $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
             }
         }
 

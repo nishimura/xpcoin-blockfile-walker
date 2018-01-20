@@ -50,14 +50,9 @@ class Block
                 $this->values['vtx'][1]->isCoinStake());
     }
 
-    public static function fromBinary($pos)
+    public static function readFp($fp)
     {
-        list($nFile, $nBlockPos) = $pos;
-        $file = Config::$datadir . '/' . self::FILE;
-        $file = sprintf($file, $nFile);
-
-        $fp = fopen($file, 'rb');
-        fseek($fp, $nBlockPos);
+        $start = ftell($fp);
 
         $data = [];
 
@@ -83,12 +78,25 @@ class Block
         $data['vchBlockSig'] = readFpVector($fp);
 
 
-        fseek($fp, $nBlockPos);
+        fseek($fp, $start);
         $data['hash'] = strrev(self::getHashFromFp($fp));
 
+        return new self($data);
+    }
+
+    public static function fromBinary($pos)
+    {
+        list($nFile, $nBlockPos) = $pos;
+        $file = Config::$datadir . '/' . self::FILE;
+        $file = sprintf($file, $nFile);
+
+        $fp = fopen($file, 'rb');
+        fseek($fp, $nBlockPos);
+
+        $ret = self::readFp($fp);
 
         fclose($fp);
-        return new self($data);
+        return $ret;
     }
 
     public static function getHashFromFp($fp)
