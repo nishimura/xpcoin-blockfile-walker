@@ -22,3 +22,6 @@ CREATE TABLE txindex(
   nextn int[] not null
 );
 CREATE INDEX txindex_txhash_btree on txindex (txhash);
+
+-- if txhash size is large:
+--CREATE INDEX txindex_txhash_hash on txindex using hash (txhash);
