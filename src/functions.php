@@ -132,6 +132,12 @@ function readFpVector($fp)
     $size = readCompactSizeRaw($fp);
     if ($size <= 0)
         return '';
+
+    if ($size > 2147483647){
+        $pos = ftell($fp);
+        throw new Exception('read size over: size=' . $size . ', pos=' . $pos);
+    }
+
     return fread($fp, $size);
 }
 

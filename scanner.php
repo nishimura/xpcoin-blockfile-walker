@@ -3,6 +3,7 @@
 use Xpcoin\BlockFileWalker\Config;
 use Xpcoin\BlockFileWalker\Db;
 use Xpcoin\BlockFileWalker\Xp;
+use Xpcoin\BlockFileWalker\Exception;
 use function Xpcoin\BlockFileWalker\readCompactSizeRaw;
 use function Xpcoin\BlockFileWalker\readStr;
 use function Xpcoin\BlockFileWalker\packKey;
@@ -105,7 +106,15 @@ for ($i = 1; $i <= $max; $i++){
     $size = readCompactSizeRaw($fp);
     for ($j = 0; $j < $size; $j++){
         $nTxPos = ftell($fp);
-        $tx = Xp\Tx::readFp($fp);
+
+        try {
+            $tx = Xp\Tx::readFp($fp);
+        }catch (Exception $e){
+            echo 'Invalid data: ', $e->getMessage();
+            fseek($fp, $nBlockPos + $blocksize);
+            continue 2;
+        }
+
         $txhash = $tx->values['txid'];
         $txhashdb = toByteaDb(strrev($txhash));
 
@@ -126,7 +135,7 @@ for ($i = 1; $i <= $max; $i++){
                  * Indexed tx hash is main.
                  */
                 fseek($fp, $nBlockPos + $blocksize);
-                continue 2;
+                continue 3;
 
                 //throw new Exception("Debug stop: $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
             }
