@@ -57,6 +57,10 @@ function blocksView($blocks){
 }
 
 function txsView($txs){
+    global $params;
+    $address = $params->address;
+    $addressQuery = strlen($address) !== 0;
+
     foreach ($txs as $tx){
         $o = new \stdClass;
         $o->blockhash = $tx->toPresenter()->blockhash;
@@ -77,8 +81,6 @@ function txsView($txs){
         if (isset($p->vin['coinbase'])){
             $o->data->coinbase = $p->vin['coinbase'];
             $o->data->nSequence = bin2hex($p->vin['nSequence']);
-            if ($o->data->nSequence == 'ffffffff') // default
-                unset($o->data->nSequence);
         }else{
             $o->vin = [];
             foreach ($p->vin as $in){
@@ -95,12 +97,14 @@ function txsView($txs){
 
                 $dests = $in['scriptPubKey']->extractDestinations();
                 $obj->prevout->nValue = toAmount($in['nValue']);
+                $obj->prevout->addrs = [];
                 if ($dests){
                     $obj->prevout->type = $dests[0];
                     $obj->prevout->addrs = $dests[1];
                 }
-
-                $o->vin[] = $obj;
+                if (!$addressQuery ||
+                    in_array($address, $obj->prevout->addrs))
+                    $o->vin[] = $obj;
             }
 
         }
@@ -129,7 +133,9 @@ function txsView($txs){
                 $obj->spentCss = 'unspent';
             }
 
-            $o->vout[] = $obj;
+            if (!$addressQuery ||
+                in_array($address, $obj->addrs))
+                $o->vout[] = $obj;
         }
 
         yield $o;

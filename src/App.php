@@ -27,6 +27,7 @@ class App
     {
         $p = $this->params;
         $p->query = $query;
+        $p->address = null;
 
         if ($query === null){
             $p->blocks = $this->queryHeight();
