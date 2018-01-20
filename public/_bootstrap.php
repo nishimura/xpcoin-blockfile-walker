@@ -121,6 +121,12 @@ function txsView($txs){
             if (strlen($out['nextin.hash'])){
                 $obj->nextHash = bin2hex($out['nextin.hash']);
                 $obj->nextN = toInt($out['nextin.n']);
+
+                $obj->IS_SPENT = true;
+                $obj->spentCss = 'spent';
+            }else if ($obj->nValue){
+                $obj->IS_UNSPENT = true;
+                $obj->spentCss = 'unspent';
             }
 
             $o->vout[] = $obj;

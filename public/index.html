@@ -93,7 +93,7 @@
               </td>
             </tr>
 
-            <tr laiz:loop="tx.vout:i:out">
+            <tr laiz:loop="tx.vout:i:out" class="{out.spentCss}">
               <th>vout:{i}</th>
               <td>
                 <div class="amount">
@@ -111,8 +111,7 @@
                       <div>nextin.hash: {out.nextHash:l}</div>
                       <div>nextin.n: {out.nextN}</div>
                     </div>
-                    <div laiz:else class="not-yet-redeemed">
-                      spent
+                    <div laiz:else>
                       <script>amount += {out.nValue};</script>
                     </div>
                   </div>
