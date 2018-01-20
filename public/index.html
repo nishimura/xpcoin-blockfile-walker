@@ -79,7 +79,7 @@
               <th>vin:{i}</th>
               <td>
                 <div laiz:loop="in.data:name:row">
-                  <div>{name}: {row:l}</div>
+                  <div>{name}: {row}</div>
                 </div>
                 <div class="amount">
                   prevout.nValue: {in.prevout.nValue:a}
@@ -89,6 +89,10 @@
                   <span laiz:loop="in.prevout.addrs:addr">
                     {addr:l}
                   </span>
+                </div>
+
+                <div>
+                  prevout.hash: {in.prevout.hash:l} : {in.prevout.n}
                 </div>
               </td>
             </tr>
@@ -100,13 +104,15 @@
                   nValue: {out.nValue:a}
                 </div>
                 <div>
-                  <div>scryptPubKey: {out.scriptPubKey}</div>
-                  <div>{out.type}</div>
+                  <div laiz:if="out.scriptPubKey">
+                    scryptPubKey: {out.scriptPubKey}
+                  </div>
+                  <div laiz:if="out.scriptPubKey">{out.type}</div>
                   <div laiz:loop="out.addrs:k:v">
                     <div>{k}: {v:l}</div>
                   </div>
 
-                  <div laiz:if="out.scriptPubKey">
+                  <div laiz:if="out.addrs">
                     <div laiz:ifel="out.nextHash" class="nextin">
                       <div>nextin.hash: {out.nextHash:l}</div>
                       <div>nextin.n: {out.nextN}</div>

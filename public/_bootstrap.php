@@ -88,12 +88,12 @@ function txsView($txs){
                 $obj->data = new \stdClass();
                 $obj->prevout = new \stdClass();
 
-                $obj->data->prevoutHash = bin2hex($in['prevout.hash']);
-                $obj->data->prevoutN = toInt($in['prevout.n']);
-                $obj->data->scriptSig = $in['scriptSig'];
-                $obj->data->nSequence = bin2hex($in['nSequence']);
-                if ($obj->data->nSequence == 'ffffffff') // default
-                    unset($obj->data->nSequence);
+                $obj->prevout->hash = bin2hex($in['prevout.hash']);
+                $obj->prevout->n = toInt($in['prevout.n']);
+                if (!$addressQuery){
+                    $obj->data->scriptSig = $in['scriptSig'];
+                    $obj->data->nSequence = bin2hex($in['nSequence']);
+                }
 
                 $dests = $in['scriptPubKey']->extractDestinations();
                 $obj->prevout->nValue = toAmount($in['nValue']);
@@ -113,7 +113,9 @@ function txsView($txs){
         foreach ($p->vout as $out){
             $obj = new \stdClass();
             $obj->nValue = toAmount($out['nValue']);
-            $obj->scriptPubKey = $out['scriptPubKey']->toString();
+
+            if (!$addressQuery)
+                $obj->scriptPubKey = $out['scriptPubKey']->toString();
 
             $obj->addrs = [];
             $dests = $out['scriptPubKey']->extractDestinations();
