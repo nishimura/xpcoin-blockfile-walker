@@ -126,22 +126,19 @@ for ($i = 1; $i <= $max; $i++){
                 $hit = true;
             }
             if (!$hit){
-                $stmt = $db->prepare('select bhash from bindex where height = '
-                                   . ($nHeight - 1));
-                $stmt->bindColumn(1, $bhash);
-                $stmt->execute();
-                while ($stmt->fetch(PDO::FETCH_BOUND)){
-                    $query = $packIndex . $bhash;
-                    foreach ($bdb->range($query, 1) as $key => $value){
-                        readStr($value, 36); // serVersion, hashNext
-                        $_nFile = readInt32($value);
-                        $_nBlockPos = readInt32($value);
-                        fseek($fp, $_nBlockPos - 8);
+                // re-check prev
+                foreach ($bdb->range($query, 1) as $key => $value){
+                    $blockpos = Xp\DiskBlockIndex::fromBinary($key, $value);
+                    $revPrev = strrev($blockpos->values['hashPrev']);
+
+                    foreach ($bdb->range($packIndex . $revPrev, 1) as $key => $value){
+                        $blockpos = Xp\DiskBlockIndex::fromBinary($key, $value);
+                        fseek($fp, $blockpos->values['nBlockPos'] - 8);
                         goto continueloop;
                     }
-                        
-                    throw new Exception('Parse Error: ' . ($nHeight - 1));
                 }
+
+                throw new Exception('Parse Error: ' . ($nHeight - 1));
             }
 
             if (!$hit)
