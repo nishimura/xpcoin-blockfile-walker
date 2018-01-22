@@ -17,7 +17,7 @@ chdir($dir);
 
 $lockdir = $dir . '/.scanner-lock';
 
-if (!mkdir($lockdir)){
+if (!@mkdir($lockdir)){
     //die("lock dir: $lockdir exists");
     exit(1);
 }
