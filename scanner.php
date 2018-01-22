@@ -15,6 +15,20 @@ use function Xpcoin\BlockFileWalker\decToBin;
 $dir = __DIR__;
 chdir($dir);
 
+$lockdir = $dir . '/.scanner-lock';
+
+if (!mkdir($lockdir)){
+    die("lock dir: $lockdir exists");
+}
+
+function unlockdir()
+{
+    global $lockdir;
+    rmdir($lockdir);
+}
+register_shutdown_function('unlockdir');
+
+
 require_once  "$dir/vendor/autoload.php";
 
 Config::set("$dir/config.ini");
