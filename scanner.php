@@ -119,9 +119,9 @@ for ($i = 1; $i <= $max; $i++){
             if (!$hit){
                 $stmt = $db->prepare('select bhash from bindex where height = '
                                    . ($nHeight - 1));
-                $stmt->bindColumn($bhash, 1);
+                $stmt->bindColumn(1, $bhash);
                 $stmt->execute();
-                foreach ($stmt as $_){
+                while ($stmt->fetch(PDO::FETCH_BOUND)){
                     $query = $packIndex . $bhash;
                     foreach ($bdb->range($query, 1) as $key => $value){
                         readStr($value, 36); // serVersion, hashNext
