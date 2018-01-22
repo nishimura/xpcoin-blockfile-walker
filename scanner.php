@@ -116,6 +116,25 @@ for ($i = 1; $i <= $max; $i++){
             foreach ($stmt as $_){
                 $hit = true;
             }
+            if (!$hit){
+                $stmt = $db->prepare('select bhash from bindex where height = '
+                                   . ($nHeight - 1));
+                $stmt->bindColumn($bhash, 1);
+                $stmt->execute();
+                foreach ($stmt as $_){
+                    $query = $packIndex . $bhash;
+                    foreach ($bdb->range($query, 1) as $key => $value){
+                        readStr($value, 36); // serVersion, hashNext
+                        $_nFile = readInt32($value);
+                        $_nBlockPos = readInt32($value);
+                        fseek($fp, $_nBlockPos - 8);
+                        goto continueloop;
+                    }
+                        
+                    throw new Exception('Parse Error: ' . ($nHeight - 1));
+                }
+            }
+
             if (!$hit)
                 throw new Exception('Height Check Error: ' . ($nHeight - 1));
         }
@@ -142,7 +161,7 @@ for ($i = 1; $i <= $max; $i++){
         }catch (Exception $e){
             echo 'Invalid data: ', $e->getMessage();
             fseek($fp, $nBlockPos + $blocksize);
-            continue 2;
+            goto continueloop;
         }
 
         $txhash = $tx->values['txid'];
@@ -165,7 +184,7 @@ for ($i = 1; $i <= $max; $i++){
                  * Indexed tx hash is main.
                  */
                 fseek($fp, $nBlockPos + $blocksize);
-                continue 3;
+                goto continueloop;
 
                 //throw new Exception("Debug stop: $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
             }
@@ -174,7 +193,7 @@ for ($i = 1; $i <= $max; $i++){
         if (!$hit){
             // block is indexed, tx is not indexed, not main branch
             fseek($fp, $nBlockPos + $blocksize);
-            continue 2;
+            goto continueloop;
         }
 
         $prevOutTxs = [];
@@ -302,6 +321,7 @@ where txhash = ? and outdata[%d] = ?
         echo "$i\n";
     }
 
+    continueloop:
 }
 
 $lastPos = ftell($fp);
