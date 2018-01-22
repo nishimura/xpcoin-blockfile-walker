@@ -18,7 +18,8 @@ chdir($dir);
 $lockdir = $dir . '/.scanner-lock';
 
 if (!mkdir($lockdir)){
-    die("lock dir: $lockdir exists");
+    //die("lock dir: $lockdir exists");
+    exit(1);
 }
 
 function unlockdir()
