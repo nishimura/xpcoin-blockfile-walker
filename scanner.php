@@ -54,6 +54,8 @@ $max = 1000;
 if (isset($argv[1]))
     $max = $argv[1];
 
+$heightMap = [-1 => true];
+
 $db->beginTransaction();
 
 for ($i = 1; $i <= $max; $i++){
@@ -92,6 +94,18 @@ for ($i = 1; $i <= $max; $i++){
         }
 
         $nHeight = readInt32($value);
+        if (!isset($heightMap[$nHeight - 1])){
+            $stmt = $db->query('select * from bindex where height = '
+                               . ($nHeight - 1));
+            $hit = false;
+            foreach ($stmt as $_){
+                $hit = true;
+            }
+            if (!$hit)
+                throw new Exception('Height Check Error: ' . ($nHeight - 1));
+        }
+        $heightMap[$nHeight] = true;
+
         $blockhashdb = toByteaDb($revBlockHash);
         $stmt = $db->prepare('INSERT INTO bindex values (?, ?)');
         $stmt->bindValue(1, $blockhashdb, PDO::PARAM_LOB);
