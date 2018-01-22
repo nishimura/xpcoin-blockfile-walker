@@ -133,7 +133,7 @@ for ($i = 1; $i <= $max; $i++){
 
                     foreach ($bdb->range($packIndex . $revPrev, 1) as $key => $value){
                         $blockpos = Xp\DiskBlockIndex::fromBinary($key, $value);
-                        fseek($fp, $blockpos->values['nBlockPos'] - 8);
+                        fseek($fp, toInt($blockpos->values['nBlockPos']) - 8);
                         goto continueloop;
                     }
                 }
