@@ -16,10 +16,7 @@ CREATE TABLE txindex(
   txhash bytea not null,
   height int not null,
 
-  inaddr bytea[] not null,
-  outaddr bytea[] not null,
-  nexthash bytea[] not null,
-  nextn int[] not null
+  outdata bytea[] not null
 );
 CREATE INDEX txindex_txhash_btree on txindex (txhash);
 

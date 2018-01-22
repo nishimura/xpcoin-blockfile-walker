@@ -5,6 +5,7 @@ namespace Xpcoin\BlockFileWalker;
 use Laiz\Template\Parser;
 use function Xpcoin\BlockFileWalker\addrToBin;
 use function Xpcoin\BlockFileWalker\toByteaDb;
+use function Xpcoin\BlockFileWalker\toAmount;
 
 use PDO;
 
@@ -38,8 +39,10 @@ class App
             $p->address = $query;
             $p->blocks = [];
             $p->txs = $this->queryAddr($query, $full);
-            if (!$full)
+            if (!$full){
                 $p->FULL_LINK = true;
+                $p->total = $this->queryTotal($query);
+            }
 
             return $this;
         }
@@ -101,7 +104,30 @@ class App
     }
 
 
-    private function queryAddr($query, $full, $limit = 200)
+
+    private function queryTotal($query)
+    {
+        $pdo = Config::getPdo();
+        $addr = toByteaDb(strrev(addrToBin($query)));
+
+        $sql = '
+select sum(bytea_to_amount(outdata, ?)) from txindex
+where substrbytea(outdata, 1, 9) @> ARRAY[?::bytea]
+';
+        $param1 = $addr;
+        $param2 = $addr . chr(0x01);
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindColumn(1, $total);
+        $stmt->bindParam(1, $param1, PDO::PARAM_LOB);
+        $stmt->bindParam(2, $param2, PDO::PARAM_LOB);
+        $stmt->execute();
+        while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            // bind
+        }
+        return $total / 1000000.0;
+    }
+
+    private function queryAddr($query, $full, $limit = 1024)
     {
         $pdo = Config::getPdo();
 
@@ -110,21 +136,21 @@ class App
         if ($full){
             $sql = '
 select txhash from txindex
-where outaddr @> ARRAY[?::bytea] or inaddr @> ARRAY[?::bytea]
+where substrbytea(outdata, 1, 8) @> ARRAY[?::bytea]
 order by height desc
 limit ' . $limit;
+            $param = $addr;
         }else{
         $sql = '
 select txhash from txindex
-where outaddr @> ARRAY[?::bytea]
-  and nexthash[array_position(outaddr, ?::bytea)] is null
+where substrbytea(outdata, 1, 9) @> ARRAY[?::bytea]
 order by height desc
 limit ' . $limit;
+            $param = $addr . chr(0x01);
         }
         $stmt = $pdo->prepare($sql);
         $stmt->bindColumn(1, $txhash);
-        $stmt->bindParam(1, $addr, PDO::PARAM_LOB);
-        $stmt->bindParam(2, $addr, PDO::PARAM_LOB);
+        $stmt->bindParam(1, $param, PDO::PARAM_LOB);
         $stmt->execute();
 
         $prefix = packStr('tx');

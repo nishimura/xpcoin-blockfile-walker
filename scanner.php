@@ -10,6 +10,7 @@ use function Xpcoin\BlockFileWalker\packKey;
 use function Xpcoin\BlockFileWalker\packStr;
 use function Xpcoin\BlockFileWalker\toInt;
 use function Xpcoin\BlockFileWalker\toByteaDb;
+use function Xpcoin\BlockFileWalker\decToBin;
 
 $dir = __DIR__;
 chdir($dir);
@@ -147,7 +148,6 @@ for ($i = 1; $i <= $max; $i++){
             continue 2;
         }
 
-        $vin = [];
         $prevOutTxs = [];
         if (isset($tx->values['vin']['coinbase'])){
             // nothing
@@ -170,11 +170,14 @@ for ($i = 1; $i <= $max; $i++){
                     foreach ($dests[1] as $addr){
                         $addr = $addr->toAddressBin();
                         $revaddr = strrev($addr);
-                        $vin[$k] = toByteaDb($revaddr);
-                        $prevOutTxs[] = [toByteaDb($prevRevhash),
-                                         $prevN,
-                                         $txhashdb,
-                                         $k];
+                        $prevOutTxs[] = [
+                            toByteaDb($revaddr),
+                            toByteaDb($prevRevhash),
+                            $out['nValue'],
+                            $prevN,
+                            $txhashdb,
+                            $k,
+                        ];
                         break; // not support multisig
                     }
 
@@ -186,35 +189,30 @@ for ($i = 1; $i <= $max; $i++){
         $vout = [];
         foreach ($tx->values['vout'] as $k => $out){
             $dests = $out['scriptPubKey']->extractDestinations();
+            $vout[$k] = null;
             if (isset($dests[1])){
                 foreach ($dests[1] as $addr){
                     $addr = $addr->toAddressBin();
                     $revaddr = strrev($addr);
-                    $vout[$k] = toByteaDb($revaddr);
+                    $vout[$k] = toByteaDb($revaddr)
+                              . chr(0x01)
+                              . $out['nValue'];
                     break; // not support multisig
                 }
             }
         }
 
         // insert this tx
-        $inlen = count($vin);
         $outlen = count($vout);
         $sql = sprintf(
             '
-INSERT INTO txindex(txhash, height, inaddr, outaddr, nexthash, nextn)
-values(?, ?, ARRAY[%s]::bytea[], ARRAY[%s]::bytea[],
-       ARRAY[]::bytea[], ARRAY[]::int[])
-',
-            implode(',', array_fill(0, $inlen, '?')),
-            implode(',', array_fill(0, $outlen, '?')));
+INSERT INTO txindex(txhash, height, outdata)
+values(?, ?, ARRAY[%s]::bytea[])
+', implode(',', array_fill(0, $outlen, '?')));
         $stmt = $db->prepare($sql);
         $stmt->bindValue(1, $txhashdb, PDO::PARAM_LOB);
         $stmt->bindValue(2, $nHeight, PDO::PARAM_INT);
         $inc = 3;
-        foreach ($vin as $k => $v){
-            $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
-            $inc++;
-        }
         foreach ($vout as $k => $v){
             $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
             $inc++;
@@ -223,18 +221,34 @@ values(?, ?, ARRAY[%s]::bytea[], ARRAY[%s]::bytea[],
 
         // update prev tx
         foreach ($prevOutTxs as $prevOutTx){
-            list($prev, $prevn, $next, $nextn) = $prevOutTx;
+            list($prevaddr, $prevtx, $nValue, $prevn, $nexttx, $nextn)
+                = $prevOutTx;
             $prevn++; // PostgreSQL array is started 1
             $stmt =$db->prepare(sprintf('
 UPDATE txindex
-set nexthash[%d] = ?,
-    nextn[%d] = ?
-where txhash = ?
+set outdata[%d] = ?
+where txhash = ? and outdata[%d] = ?
 ', $prevn, $prevn));
-            $stmt->bindValue(1, $next, PDO::PARAM_LOB);
-            $stmt->bindValue(2, $nextn, PDO::PARAM_INT);
-            $stmt->bindValue(3, $prev, PDO::PARAM_LOB);
+
+            $check = $prevaddr . chr(0x01) . $nValue;
+            $newdata = $prevaddr . chr(0x02) . $nValue
+                     . $nexttx . hex2bin(sprintf('%08x', $nextn));
+
+            $stmt->bindValue(1, $newdata, PDO::PARAM_LOB);
+            $stmt->bindValue(2, $prevtx, PDO::PARAM_LOB);
+            $stmt->bindValue(3, $check, PDO::PARAM_LOB);
             $stmt->execute();
+            if (($c = $stmt->rowCount()) !== 1){
+                var_dump($prevOutTx);
+                var_dump(bin2hex($check));
+                var_dump(bin2hex($newdata));
+                throw new Exception("Error update check: " .
+                                    bin2hex($prevtx) .
+                                    '[' . $prevn . '] ' .
+                                    ':' .
+                                    bin2hex($prevaddr) . ':' .
+                                    bin2hex($nexttx));
+            }
         }
     }
 

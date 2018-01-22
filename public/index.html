@@ -22,12 +22,14 @@
     <div laiz:if="address">
       <div class="content">
         <div>{address}</div>
+        <div>limit 1024 transactions</div>
         <div laiz:if="FULL_LINK">
           These transactions are including only unspent.
           <a href="?q={address}&full=1">show spent</a>
         </div>
       </div>
-      <div class="content" id="amount" laiz:if="FULL_LINK">
+      <div class="content" laiz:if="FULL_LINK">
+        {total:a}
       </div>
     </div>
 
@@ -60,8 +62,6 @@
         </div>
       </div>
 
-
-      <script>var amount = 0.0;</script>
 
       <div laiz:if="txs" laiz:loop="txs:tx">
         <div style="padding-left: 16px;">
@@ -113,12 +113,9 @@
                   </div>
 
                   <div laiz:if="out.addrs">
-                    <div laiz:ifel="out.nextHash" class="nextin">
+                    <div laiz:if="out.nextHash" class="nextin">
                       <div>nextin.hash: {out.nextHash:l}</div>
                       <div>nextin.n: {out.nextN}</div>
-                    </div>
-                    <div laiz:else>
-                      <script>amount += {out.nValue};</script>
                     </div>
                   </div>
                 </div>
@@ -127,13 +124,6 @@
           </table>
         </div>
       </div>
-
-      <script>
-        if (amount > 0 && document.getElementById('amount')){
-          document.getElementById('amount').innerHTML =
-            'Not yet redeemed TOTAL: ' + amount + ' (limit 200 tx)<br><br>';
-        }
-      </script>
 
     </div>
 

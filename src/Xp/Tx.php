@@ -16,6 +16,7 @@ use function Xpcoin\BlockFileWalker\toInt;
 use function Xpcoin\BlockFileWalker\toByteaDb;
 use function Xpcoin\BlockFileWalker\packStr;
 use function Xpcoin\BlockFileWalker\decToBin;
+use function Xpcoin\BlockFileWalker\readStr;
 
 use PDO;
 
@@ -83,24 +84,29 @@ class Tx
         if (self::$bdb === null)
             self::$bdb = new Db(Config::$datadir);
 
-        $query = 'SELECT nexthash[%d], nextn[%d] from txindex where txhash = ?';
+        $query = 'SELECT outdata[%d] from txindex where txhash = ?';
         $prevn++;
         $query = sprintf($query, $prevn, $prevn);
         $hash = toByteaDb($prevrevhash);
         $txprefix = packStr('tx');
         $stmt = self::$pdo->prepare($query);
-        $stmt->bindColumn(1, $nexthash);
-        $stmt->bindColumn(2, $nextn, PDO::PARAM_INT);
+        $stmt->bindColumn(1, $outdata);
         $stmt->bindParam(1, $hash, PDO::PARAM_LOB);
         $stmt->execute();
 
         while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
-            if ($nexthash === null || $nextn === null){
-                if ($nexthash || $nextn)
-                    throw new Exception('Scan Bug');
+            if ($outdata === null){
                 return [null, null];
             }
 
+            $nextaddr = readStr($outdata, 8);
+            $pad = readStr($outdata, 1);
+            if (ord($pad) !== 0x02)
+                return [null, null];
+
+            $nValue = readStr($outdata, 8);
+            $nexthash = readStr($outdata, 8);
+            $nextn = readStr($outdata, 4);
             $range = $txprefix . $nexthash;
             foreach (self::$bdb->range($range, 1) as $key => $value){
                 $n = decToBin($nextn);
