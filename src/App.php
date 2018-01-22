@@ -41,7 +41,9 @@ class App
             $p->txs = $this->queryAddr($query, $full);
             if (!$full){
                 $p->FULL_LINK = true;
-                $p->total = $this->queryTotal($query);
+                list($total, $count) = $this->queryTotal($query);
+                $p->total = $total;
+                $p->count = $count;
             }
 
             return $this;
@@ -111,20 +113,21 @@ class App
         $addr = toByteaDb(strrev(addrToBin($query)));
 
         $sql = '
-select sum(bytea_to_amount(outdata, ?)) from txindex
+select sum(bytea_to_amount(outdata, ?)), count(txhash) from txindex
 where substrbytea(outdata, 1, 9) @> ARRAY[?::bytea]
 ';
         $param1 = $addr;
         $param2 = $addr . chr(0x01);
         $stmt = $pdo->prepare($sql);
         $stmt->bindColumn(1, $total);
+        $stmt->bindColumn(2, $count);
         $stmt->bindParam(1, $param1, PDO::PARAM_LOB);
         $stmt->bindParam(2, $param2, PDO::PARAM_LOB);
         $stmt->execute();
         while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
             // bind
         }
-        return $total / 1000000.0;
+        return [$total / 1000000.0, $count];
     }
 
     private function queryAddr($query, $full, $limit = 1024)
