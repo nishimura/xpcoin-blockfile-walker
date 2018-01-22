@@ -30,6 +30,15 @@ function unlockdir()
 register_shutdown_function('unlockdir');
 
 
+set_error_handler(
+    function ($errno, $errstr, $errfile, $errline) {
+        throw new ErrorException(
+            $errstr, 0, $errno, $errfile, $errline
+        );
+    }
+); // BDB PAGE_NOTFOUND erro => Exception
+
+
 require_once  "$dir/vendor/autoload.php";
 
 Config::set("$dir/config.ini");
