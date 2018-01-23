@@ -4,17 +4,18 @@ DROP TABLE IF EXISTS posinfo;
 
 CREATE TABLE posinfo(
   nfile bigint not null,
-  npos bigint not null
+  npos bigint not null,
+  height int not null
 );
 
 CREATE TABLE bindex(
-  bhash bytea not null,
+  bhash bytea not null primary key,
   height int not null
 );
 
 CREATE TABLE txindex(
   txhash bytea not null,
-  height int not null,
+  bhash bytea not null references bindex(bhash),
 
   outdata bytea[] not null
 );
