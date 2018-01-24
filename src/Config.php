@@ -12,6 +12,7 @@ class Config
     public static $PUBKEY_ADDRESS;
     public static $ADDRESS_PREFIX;
     public static $MESSAGE;
+    public static $GENESIS_BLOCK;
 
 
     public static $CACHE_LIMIT = 3000;
@@ -41,10 +42,12 @@ class Config
             self::$PUBKEY_ADDRESS = 111;
             self::$ADDRESS_PREFIX = ['m', 'n'];
             self::$MESSAGE = 'cdf2c0ef';
+            self::$GENESIS_BLOCK = '0000e097477b585e7289f4c23c4ff639a8775e8f4d2c715586f160fff8869278';
         }else{
             self::$PUBKEY_ADDRESS = 75;
             self::$ADDRESS_PREFIX = ['X'];
             self::$MESSAGE = 'b4f8e2e5';
+            self::$GENESIS_BLOCK = '0000065a10945931644cdda436d5ad0742d085e9dee3e7fdd51b822626727e78';
         }
 
         if (isset($config['cache_limit']))
