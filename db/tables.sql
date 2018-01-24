@@ -10,8 +10,11 @@ CREATE TABLE posinfo(
 
 CREATE TABLE bindex(
   bhash bytea not null primary key,
-  height int not null
+  height int not null,
+  nfile bigint not null,
+  npos bigint not null
 );
+CREATE INDEX bindex_height_unique_btree on bindex(height);
 
 CREATE TABLE txindex(
   txhash bytea not null,

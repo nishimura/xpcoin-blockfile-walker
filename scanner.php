@@ -36,12 +36,21 @@ set_error_handler(
             $errstr, 0, $errno, $errfile, $errline
         );
     }
-); // BDB PAGE_NOTFOUND erro => Exception
+); // typo, BDB PAGE_NOTFOUND error => Exception
 
 
 require_once  "$dir/vendor/autoload.php";
 
 Config::set("$dir/config.ini");
+
+
+$loopmax = 100;
+if (isset($argv[1]))
+    $loopmax = $argv[1];
+$recheck = 10;
+if (isset($argv[2]))
+    $recheck = $argv[2];
+
 
 $file = Config::$datadir . '/blk0001.dat';
 $fp = fopen($file, 'rb');
@@ -49,18 +58,56 @@ $fp = fopen($file, 'rb');
 $bdb = new Db(Config::$datadir);
 $db = Config::getPdo();
 
+$packIndex = packStr('blockindex');
+$packTx = packStr('tx');
+$packNullHash = hex2bin(str_repeat('0', 8 * 2));
+
 $prevLastPos = null;
+$prevLastFile = 1;
 $prevLastHeight = 0;
 // TODO: fpos
 foreach ($db->query('select * from posinfo') as $row){
+    $prevLastFile = $row->nfile;
     $prevLastPos = $row->npos;
     $prevLastHeight = $row->height;
     break;
 }
+
+$prevHashNext = toByteaDb(strrev(hex2bin(Config::$GENESIS_BLOCK)));
+$prevHash = $packNullHash;
+
 if ($prevLastPos === null){
     $db->query('INSERT INTO posinfo values(1, 0, 0)');
     $prevLastPos = 0;
+}else{
+
+    for ($i = $prevLastHeight - $recheck; $i <= $prevLastHeight; $i++){
+        $query = 'select bhash from bindex where height = ' . $i;
+        $stmt = $db->prepare($query);
+        $stmt->bindColumn(1, $prevHash);
+        $stmt->execute();
+
+        $hit = false;
+        while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+            $hit = true;
+        }
+        if (!$hit)
+            throw new Exception('BUG: bhash not exists: recheck ' . $i);
+
+        $hit = false;
+        foreach ($bdb->range($packIndex . $prevHash, 1) as $key => $value){
+            $hit = true;
+            readStr($value, 4); // serVersion
+            $prevHashNext = readStr($value, 8); // 8 byte from hashNext
+        }
+
+        if (!$hit)
+            throw new Exception('blockindex not exists: recheck ' . $i);
+        // TODO: !isset($prevHashNext) rollbackBlock
+        // bdb blockindex updated
+    }
 }
+
 fseek($fp, $prevLastPos);
 
 function readInt32(&$str)
@@ -72,33 +119,6 @@ function query($query, $params){
     global $db;
     return $db->prepare($query)->execute($params);
 }
-
-class Action
-{
-    private $a = [];
-    public function clear()
-    {
-        $this->a = [];
-    }
-
-    public function push($f)
-    {
-        $this->a[] = $f;
-    }
-
-    public function run()
-    {
-        foreach ($this->a as $a)
-            $a();
-        $this->clear();
-    }
-}
-$action = new Action();
-
-
-$packIndex = packStr('blockindex');
-$packTx = packStr('tx');
-$packNullHash = hex2bin(str_repeat('0', 256 / 8 * 2));
 
 
 function parseVin($txhashdb, $vin)
@@ -112,6 +132,9 @@ function parseVin($txhashdb, $vin)
 
         $prevRevhash = strrev($prevHash);
         $query = $packTx . $prevRevhash;
+
+        $prevhashdb = toByteaDb($prevRevhash);
+
         foreach ($bdb->range($query, 1) as $key => $value){
             $prevtx = Xp\DiskTxPos::fromBinary($key, $value);
             if (!isset($prevtx->values['details']->values['vout'][$prevN]))
@@ -126,7 +149,7 @@ function parseVin($txhashdb, $vin)
                 $revaddr = strrev($addr);
                 $prevOutTxs[] = [
                     toByteaDb($revaddr),
-                    toByteaDb($prevRevhash),
+                    $prevhashdb,
                     $out['nValue'],
                     $prevN,
                     $txhashdb,
@@ -146,7 +169,7 @@ function parseVout($vout)
     $ret = [];
     foreach ($vout as $k => $out){
         $dests = $out['scriptPubKey']->extractDestinations();
-        $vout[$k] = null;
+        $ret[$k] = null;
         if (isset($dests[1])){
             foreach ($dests[1] as $addr){
                 $addr = $addr->toAddressBin();
@@ -161,16 +184,14 @@ function parseVout($vout)
     return $ret;
 }
 
-
-$max = 1000;
-if (isset($argv[1]))
-    $max = $argv[1];
-
 $db->beginTransaction();
 
-for ($i = 1; $i <= $max; $i++){
+for ($i = 1; $i <= $loopmax; $i++){
     if (feof($fp))
         break;
+
+    $nMessagePos = ftell($fp);
+
     $b = fread($fp, 4);
     if (strlen($b) == 0)
         break;
@@ -183,54 +204,67 @@ for ($i = 1; $i <= $max; $i++){
     /*
      * start
      */
-    $action->clear();
 
     $blocksize = hexdec(bin2hex(strrev(fread($fp, 4))));
     //var_dump($blocksize);
     $nBlockPos = ftell($fp);
 
     $revBlockHash = XP\Block::getHashFromFp($fp);
+    $blockhashdb = toByteaDb($revBlockHash);
+
+    //var_dump(['prevnext', bin2hex($blockhashdb),bin2hex($prevHashNext)]);
+
+    if ($prevHashNext !== $blockhashdb)
+        goto continueloop;
+
     $query = $packIndex . $revBlockHash;
     $hit = false;
     foreach ($bdb->range($query, 1) as $key => $value){
+
         $hit = true;
-        readStr($value, 36); // serVersion, hashNext
+        readStr($value, 4); // serVersion
+        $hashNext = readStr($value, 8); // hashNext 8/32 byte
+        readStr($value, 24); // hashNext 24/32 byte
+
         $nFile = readInt32($value);
         $_nBlockPos = readInt32($value);
         if ($nBlockPos !== $_nBlockPos){
             // not exists bdb database
-            fseek($fp, $nBlockPos + $blocksize);
             goto continueloop;
         }
 
         $nHeight = readInt32($value);
-        $blockhashdb = toByteaDb($revBlockHash);
 
-        $action->push(function() use ($db, $blockhashdb, $nHeight){
-            $stmt = $db->prepare('INSERT INTO bindex values (?, ?)');
-            $stmt->bindValue(1, $blockhashdb, PDO::PARAM_LOB);
-            $stmt->bindValue(2, $nHeight, PDO::PARAM_INT);
-            $stmt->execute();
-        });
+        readStr($value, 16); // nMint, nMoneySupply
+        $nFlags = toInt(strrev(readStr($value, 4)));
+        readStr($value, 8); // nStakeModifier
+
+        if ($nFlags & Xp\DiskBlockIndex::BLOCK_PROOF_OF_STAKE){
+            readStr($value, 72); // stake data
+        }
+        readStr($value, 4); // nVersion
+        $hashPrev = readStr($value, 8); // hashPrev 8/32 byte
+        //var_dump(['prevhash', bin2hex($prevHash), bin2hex($hashPrev)]);
+        if ($prevHash !== $hashPrev)
+            goto continueloop;
+
+        $stmt = $db->prepare('INSERT INTO bindex values (?, ?, ?, ?)');
+        $stmt->bindValue(1, $blockhashdb, PDO::PARAM_LOB);
+        $stmt->bindValue(2, $nHeight, PDO::PARAM_INT);
+        $stmt->bindValue(3, $nFile, PDO::PARAM_INT);
+        $stmt->bindValue(4, $nMessagePos, PDO::PARAM_INT);
+        $stmt->execute();
+
         break;
     }
-    if (!$hit){
-        fseek($fp, $nBlockPos + $blocksize);
-        continue;
-    }
+    if (!$hit)
+        goto continueloop;
 
     $size = readCompactSizeRaw($fp);
     for ($j = 0; $j < $size; $j++){
         $nTxPos = ftell($fp);
 
-        try {
-            $tx = Xp\Tx::readFp($fp);
-        }catch (Exception $e){
-            echo 'Invalid data: ', $e->getMessage();
-            fseek($fp, $nBlockPos + $blocksize);
-            goto continueloop;
-        }
-
+        $tx = Xp\Tx::readFp($fp);
         $txhash = $tx->values['txid'];
         $txhashdb = toByteaDb(strrev($txhash));
 
@@ -246,19 +280,18 @@ for ($i = 1; $i <= $max; $i++){
             if ($nBlockPos != $_nBlockPos ||
                 $nTxPos != $_nTxPos){
                 /*
-                 * Data is updated.
+                 * bdb data is updated.
                  */
-                fseek($fp, $nBlockPos + $blocksize);
-                goto continueloop;
+                //goto continueloop;
 
-                //throw new Exception("Debug stop: $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
+                throw new Exception("Debug stop: $nBlockPos:$_nBlockPos, $nTxPos:$_nTxPos");
             }
         }
 
         if (!$hit){
             // block is indexed, tx is not indexed, not main branch
-            fseek($fp, $nBlockPos + $blocksize);
-            goto continueloop;
+            //goto continueloop;
+            throw new Exception('transaction not found in bdb');
         }
 
         if (isset($tx->values['vin']['coinbase'])){
@@ -278,23 +311,21 @@ INSERT INTO txindex(txhash, bhash, outdata)
 values(?, ?, ARRAY[%s]::bytea[])
 ', implode(',', array_fill(0, $outlen, '?')));
 
-        $action->push(function() use ($db, $sql, $txhashdb, $blockhashdb, $vout){
-            $stmt = $db->prepare($sql);
-            $stmt->bindValue(1, $txhashdb, PDO::PARAM_LOB);
-            $stmt->bindValue(2, $blockhashdb, PDO::PARAM_LOB);
-            $inc = 3;
-            foreach ($vout as $k => $v){
-                $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
-                $inc++;
-            }
-            $stmt->execute();
-        });
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(1, $txhashdb, PDO::PARAM_LOB);
+        $stmt->bindValue(2, $blockhashdb, PDO::PARAM_LOB);
+        $inc = 3;
+        foreach ($vout as $k => $v){
+            $stmt->bindValue($inc, $v, PDO::PARAM_LOB);
+            $inc++;
+        }
+        $stmt->execute();
 
         // update prev tx
         foreach ($prevOutTxs as $prevOutTx){
             list($prevaddr, $prevtx, $nValue, $prevn, $nexttx, $nextn)
                 = $prevOutTx;
-            $prevn++; // PostgreSQL array is started 1
+            $prevn++; // PostgreSQL array is started from 1
             $sql = sprintf('
 UPDATE txindex
 set outdata[%d] = ?
@@ -305,25 +336,23 @@ where txhash = ? and outdata[%d] = ?
             $newdata = $prevaddr . chr(0x02) . $nValue
                      . $nexttx . hex2bin(sprintf('%08x', $nextn));
 
-            $action->push(function() use ($db, $sql, $newdata, $prevtx, $check){
-                $stmt =$db->prepare($sql);
-                $stmt->bindValue(1, $newdata, PDO::PARAM_LOB);
-                $stmt->bindValue(2, $prevtx, PDO::PARAM_LOB);
-                $stmt->bindValue(3, $check, PDO::PARAM_LOB);
-                $stmt->execute();
-            });
+            $stmt =$db->prepare($sql);
+            $stmt->bindValue(1, $newdata, PDO::PARAM_LOB);
+            $stmt->bindValue(2, $prevtx, PDO::PARAM_LOB);
+            $stmt->bindValue(3, $check, PDO::PARAM_LOB);
+            $stmt->execute();
+            if (($c = $stmt->rowCount()) !== 1){
+                throw new Exception("Error update tx[n]: " .
+                                    bin2hex($prevtx)
+                                    . '[' . $prevn . '] '
+                                    . ' nexttx[n]:' . bin2hex($nexttx)
+                                    . '[' . $nextn . ']'
+                                    . "\ncheck:newdata\n" . bin2hex($check)
+                                    . "\n" . bin2hex($newdata));
+            }
         }
     }
 
-    try {
-        $action->run();
-    }catch (\Exception $e){
-        // TODO: reorganize
-        throw $e;
-    }
-
-
-    fseek($fp, $nBlockPos + $blocksize);
 
     if ($i % 100 == 0){
         echo '.';
@@ -331,7 +360,7 @@ where txhash = ? and outdata[%d] = ?
     if ($i % 1000 == 0){
         echo '*';
 
-        $lastPos = ftell($fp);
+        $lastPos = $nBlockPos + $blocksize;
         $db->query(sprintf('UPDATE posinfo set nfile = 1, npos =%d, height = %d',
                            $lastPos, $nHeight));
         $db->commit();
@@ -342,7 +371,11 @@ where txhash = ? and outdata[%d] = ?
         echo "$i\n";
     }
 
+    $prevHashNext = $hashNext;
+    $prevHash = $blockhashdb;
+
     continueloop:
+    fseek($fp, $nBlockPos + $blocksize);
 }
 
 $lastPos = ftell($fp);
