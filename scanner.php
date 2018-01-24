@@ -399,15 +399,18 @@ where txhash = ? and outdata[%d] = ?
     if ($i % 100 == 0){
         echo '.';
     }
-    if ($i % 1000 == 0){
+    if ($i % 10000 == 0){
+        echo "*$i vacuum\n";
+        $db->commit();
+        $db->query('vacuum analyze');
+        $db->beginTransaction();
+    }
+    else if ($i % 1000 == 0){
         echo '*';
 
         $db->commit();
         $db->beginTransaction();
 
-    }
-    if ($i % 10000 == 0){
-        echo "$i\n";
     }
 
     $prevHashNext = $hashNext;
