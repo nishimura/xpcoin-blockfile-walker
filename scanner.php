@@ -378,9 +378,10 @@ where txhash = ? and outdata[%d] = ?
     fseek($fp, $nBlockPos + $blocksize);
 }
 
-$lastPos = ftell($fp);
-$db->query(sprintf('UPDATE posinfo set nfile = 1, npos =%d, height = %d',
-                   $lastPos, $nHeight));
-$db->commit();
-
+if (isset($nHeight)){
+    $lastPos = ftell($fp);
+    $db->query(sprintf('UPDATE posinfo set nfile = 1, npos =%d, height = %d',
+                       $lastPos, $nHeight));
+    $db->commit();
+} // else not updated
 exit;
