@@ -50,15 +50,22 @@ createdb xpwalker -O xpwalker
 
 psql -U xpwalker -h localhost xpwalker < db/tables.sql
 
-php5.6 scanner.php 10
-php5.6 scanner.php 10000
-php5.6 scanner.php 1000000
+php5.6 scanner.php 1 -1 # read genesis block, no prev check
+php5.6 scanner.php 10 0 # read next 10 blocks, 1 prev check
+php5.6 scanner.php 1000000 # read next...
 
 ...
 
 psql -U xpwalker -h localhost xpwalker < db/indexes.sql
 
 ```
+
+Next, setup cron
+
+```
+* * * * * /usr/bin/php5.6 path/to/scanner.php 100 > path/to/last.log 2>&1
+```
+
 
 If memory size error, try this:
 
