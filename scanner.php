@@ -92,7 +92,7 @@ if ($prevLastPos === null){
             $hit = true;
         }
         if (!$hit)
-            throw new Exception('BUG: bhash not exists: recheck ' . $i);
+            throw new Exception('Error: bhash not exists: recheck ' . $i);
 
         $hit = false;
         foreach ($bdb->range($packIndex . $prevHash, 1) as $key => $value){
