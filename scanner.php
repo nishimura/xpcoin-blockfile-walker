@@ -81,10 +81,14 @@ if ($prevLastPos === null){
     $prevLastPos = 0;
 }else{
 
+    $first = true;
     for ($i = $prevLastHeight - $recheck; $i <= $prevLastHeight; $i++){
-        $query = 'select bhash from bindex where height = ' . $i;
+        $query = 'select bhash, height, nfile, npos from bindex where height = ' . $i;
         $stmt = $db->prepare($query);
-        $stmt->bindColumn(1, $prevHash);
+        $stmt->bindColumn(1, $curHash);
+        $stmt->bindColumn(2, $nHeight, PDO::PARAM_INT);
+        $stmt->bindColumn(3, $nFile, PDO::PARAM_INT);
+        $stmt->bindColumn(4, $nPos, PDO::PARAM_INT);
         $stmt->execute();
 
         $hit = false;
@@ -94,17 +98,40 @@ if ($prevLastPos === null){
         if (!$hit)
             throw new Exception('Error: bhash not exists: recheck ' . $i);
 
-        $hit = false;
-        foreach ($bdb->range($packIndex . $prevHash, 1) as $key => $value){
-            $hit = true;
-            readStr($value, 4); // serVersion
-            $prevHashNext = readStr($value, 8); // 8 byte from hashNext
+        $data = null;
+        foreach ($bdb->range($packIndex . $curHash, 1) as $key => $value){
+            $data = readDiskBlock($value);
+
+            if ($nPos !== ($data['nBlockPos'] - 8) ||
+                $nFile !== $data['nFile']){
+                throw new Exception('not match pos: todo rollback');
+                // todo rollback
+            }
+
+            if ($nHeight !== $data['nHeight']){
+                throw new Exception('not match height: todo rollback');
+            }
         }
 
-        if (!$hit)
+        if (!$data)
             throw new Exception('blockindex not exists: recheck ' . $i);
         // TODO: !isset($prevHashNext) rollbackBlock
         // bdb blockindex updated
+
+        if (!$first){
+            if ($prevHash !== $data['hashPrev']){
+                throw new Exception('not match prev hash: todo rollback');
+            }
+
+            if ($prevHashNext !== $curHash)
+                throw new Exception('hash not match: '
+                                    . bin2hex($prevHashNext) . ':'
+                                    . bin2hex($curHash));
+
+        }
+        $first = false;
+        $prevHash = $curHash;
+        $prevHashNext = $data['hashNext'];
     }
 }
 
@@ -120,6 +147,34 @@ function query($query, $params){
     return $db->prepare($query)->execute($params);
 }
 
+function readDiskBlock($value)
+{
+    readStr($value, 4); // serVersion
+    $hashNext = readStr($value, 8); // 8 byte from hashNext
+    readStr($value, 24); // hashNext 24/32 byte
+
+    $nFile = readInt32($value);
+    $nBlockPos = readInt32($value);
+    $nHeight = readInt32($value);
+
+    readStr($value, 16); // nMint, nMoneySupply
+    $nFlags = toInt(strrev(readStr($value, 4)));
+    readStr($value, 8); // nStakeModifier
+
+    if ($nFlags & Xp\DiskBlockIndex::BLOCK_PROOF_OF_STAKE){
+        readStr($value, 72); // stake data
+    }
+    readStr($value, 4); // nVersion
+    $hashPrev = readStr($value, 8); // hashPrev 8/32 byte
+
+    return [
+        'hashNext' => $hashNext,
+        'nFile' => $nFile,
+        'nBlockPos' => $nBlockPos,
+        'nHeight' => $nHeight,
+        'hashPrev' => $hashPrev,
+    ];
+}
 
 function parseVin($txhashdb, $vin)
 {
@@ -222,28 +277,18 @@ for ($i = 1; $i <= $loopmax; $i++){
     foreach ($bdb->range($query, 1) as $key => $value){
 
         $hit = true;
-        readStr($value, 4); // serVersion
-        $hashNext = readStr($value, 8); // hashNext 8/32 byte
-        readStr($value, 24); // hashNext 24/32 byte
 
-        $nFile = readInt32($value);
-        $_nBlockPos = readInt32($value);
-        if ($nBlockPos !== $_nBlockPos){
+        $data = readDiskBlock($value);
+
+        $hashNext = $data['hashNext'];
+        $nFile = $data['nFile'];
+        if ($nBlockPos !== $data['nBlockPos']){
             // not exists bdb database
             goto continueloop;
         }
 
-        $nHeight = readInt32($value);
-
-        readStr($value, 16); // nMint, nMoneySupply
-        $nFlags = toInt(strrev(readStr($value, 4)));
-        readStr($value, 8); // nStakeModifier
-
-        if ($nFlags & Xp\DiskBlockIndex::BLOCK_PROOF_OF_STAKE){
-            readStr($value, 72); // stake data
-        }
-        readStr($value, 4); // nVersion
-        $hashPrev = readStr($value, 8); // hashPrev 8/32 byte
+        $nHeight = $data['nHeight'];
+        $hashPrev = $data['hashPrev'];
         //var_dump(['prevhash', bin2hex($prevHash), bin2hex($hashPrev)]);
         if ($prevHash !== $hashPrev)
             goto continueloop;
