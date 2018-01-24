@@ -1,12 +1,5 @@
 DROP TABLE IF EXISTS txindex;
 DROP TABLE IF EXISTS bindex;
-DROP TABLE IF EXISTS posinfo;
-
-CREATE TABLE posinfo(
-  nfile bigint not null,
-  npos bigint not null,
-  height int not null
-);
 
 CREATE TABLE bindex(
   bhash bytea not null primary key,

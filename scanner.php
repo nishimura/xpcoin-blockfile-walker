@@ -62,11 +62,11 @@ $packIndex = packStr('blockindex');
 $packTx = packStr('tx');
 $packNullHash = hex2bin(str_repeat('0', 8 * 2));
 
-$prevLastPos = null;
+$prevLastPos = 0;
 $prevLastFile = 1;
 $prevLastHeight = 0;
 // TODO: fpos
-foreach ($db->query('select * from posinfo') as $row){
+foreach ($db->query('select height, nfile, npos from bindex order by height desc limit 1') as $row){
     $prevLastFile = $row->nfile;
     $prevLastPos = $row->npos;
     $prevLastHeight = $row->height;
@@ -76,10 +76,7 @@ foreach ($db->query('select * from posinfo') as $row){
 $prevHashNext = toByteaDb(strrev(hex2bin(Config::$GENESIS_BLOCK)));
 $prevHash = $packNullHash;
 
-if ($prevLastPos === null){
-    $db->query('INSERT INTO posinfo values(1, 0, 0)');
-    $prevLastPos = 0;
-}else{
+if ($prevLastPos !== 0){
 
     $first = true;
     for ($i = $prevLastHeight - $recheck; $i <= $prevLastHeight; $i++){
@@ -405,9 +402,6 @@ where txhash = ? and outdata[%d] = ?
     if ($i % 1000 == 0){
         echo '*';
 
-        $lastPos = $nBlockPos + $blocksize;
-        $db->query(sprintf('UPDATE posinfo set nfile = 1, npos =%d, height = %d',
-                           $lastPos, $nHeight));
         $db->commit();
         $db->beginTransaction();
 
@@ -423,10 +417,7 @@ where txhash = ? and outdata[%d] = ?
     fseek($fp, $nBlockPos + $blocksize);
 }
 
-if (isset($nHeight)){
-    $lastPos = ftell($fp);
-    $db->query(sprintf('UPDATE posinfo set nfile = 1, npos =%d, height = %d',
-                       $lastPos, $nHeight));
+if (isset($nHeight) && $prevLastHeight != $nHeight){
     $db->commit();
 } // else not updated
 exit;
