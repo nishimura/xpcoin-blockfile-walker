@@ -55,9 +55,11 @@ php5.6 scanner.php 10 0 # read next 10 blocks, 1 prev check
 php5.6 scanner.php 1000000 # read next...
 
 ...
+psql -U xpwalker -h localhost xpwalker
 
-psql -U xpwalker -h localhost xpwalker < db/indexes.sql
-
+VACUUM FULL;
+ANALYZE;
+\i db/indexes.sql
 ```
 
 Next, setup cron
