@@ -139,6 +139,7 @@ where substrbytea(outdata, 1, 9) @> ARRAY[?::bytea]
         if ($full){
             $sql = '
 select txhash from txindex
+join bindex using(bhash)
 where substrbytea(outdata, 1, 8) @> ARRAY[?::bytea]
 order by height desc
 limit ' . $limit;
@@ -146,6 +147,7 @@ limit ' . $limit;
         }else{
         $sql = '
 select txhash from txindex
+join bindex using(bhash)
 where substrbytea(outdata, 1, 9) @> ARRAY[?::bytea]
 order by height desc
 limit ' . $limit;
