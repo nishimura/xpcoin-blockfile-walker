@@ -160,3 +160,10 @@ function decToBin($dec)
         $hex = '0' . $hex;
     return hex2bin($hex);
 }
+
+function toAmountStr($amount)
+{
+    $s = (string)$amount;
+    $s = str_pad($s, 7, '0', STR_PAD_LEFT);
+    return substr($s, 0, -6) . '.' . substr($s, -6);
+}
