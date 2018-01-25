@@ -163,7 +163,7 @@ function rollbackBlocks($height)
     $stmt->bindColumn(4, $nPos, PDO::PARAM_INT);
     $stmt->execute();
 
-    echo "\nrollback:\n";
+    echo "\nrollback: " . date('Y-m-d H:i:s') . "\n";
     while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
         echo 'height:bindex=' . $nHeight, ':', bin2hex($bhash), "\n";
 
