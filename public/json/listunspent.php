@@ -62,7 +62,7 @@ while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
     $q = $prefix . $txhash;
     foreach ($db->range($q) as $key => $value){
         $tx = Xp\DiskTxPos::fromBinary($key, $value)->values['details'];
-        $hash = bin2hex(strrev($tx->values['txid']));
+        $hash = bin2hex($tx->values['txid']);
         $tx->readNextVin();
 
         foreach ($tx->values['vout'] as $i => $out){
