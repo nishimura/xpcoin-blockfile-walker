@@ -163,6 +163,14 @@ function rollbackBlocks($height)
     $stmt->bindColumn(4, $nPos, PDO::PARAM_INT);
     $stmt->execute();
 
+    $updateSql = <<<'END'
+UPDATE txindex
+set outdata[%d] = substring(outdata[%d] from 1 for 8) || E'\\x01'
+                  || substring(outdata[%d] from 10 for 8)
+where txhash = ?
+  and substring(outdata[%d] from 18 for 12) = ?
+END;
+
     echo "\n*** rollback: " . date('Y-m-d H:i:s') . " ***\n";
     while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
         echo 'height:bindex=' . $nHeight, ':', bin2hex($bhash), "\n";
@@ -171,16 +179,33 @@ function rollbackBlocks($height)
         $vtx = $block->values['vtx'];
 
         foreach ($vtx as $tx){
+            $txhash = toByteaDb(strrev($tx->values['txid']));
             $vin = $tx->values['vin'];
             if (!isset($vin['coinbase'])){
                 foreach ($vin as $k => $v){
-                    // TODO: rollback transaction
-                    throw new Exception('TODO: rollback transactions');
+                    $prevTx = toByteaDb(strrev($v['prevout.hash']));
+                    $prevN = toInt($v['prevout.n']) + 1;
+
+                    $sql = sprintf($updateSql, $prevN, $prevN, $prevN, $prevN);
+                    $st = $db->prepare($sql);
+                    $st->bindValue(1, $prevTx, PDO::PARAM_LOB);
+                    $suffix = $txhash . hex2bin(sprintf('%08x', $k));
+                    $st->bindValue(2, $suffix, PDO::PARAM_LOB);
+                    $st->execute();
+                    if (($c = $st->rowCount()) !== 1)
+                        throw new Exception(
+                            'Update prev tx failed:'
+                            . bin2hex($txhash) . ':'
+                            . bin2hex($prevTx) . "\n"
+                            . ' suffix:' . bin2hex($suffix));
+
+                    echo '  rollback prev tx: '
+                        . bin2hex($prevTx) . ':' . $prevN
+                        . ' => ' . bin2hex($txhash) . ":$k\n";
                 }
             }
 
             $st = $db->prepare('DELETE FROM txindex where txhash = ?');
-            $txhash = toByteaDb(strrev($tx->values['txid']));
             $st->bindValue(1, $txhash, PDO::PARAM_LOB);
             $st->execute();
             if (($c = $st->rowCount()) !== 1)
