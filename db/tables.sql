@@ -7,7 +7,7 @@ CREATE TABLE bindex(
   nfile bigint not null,
   npos bigint not null
 );
-CREATE INDEX bindex_height_unique_btree on bindex(height);
+CREATE UNIQUE INDEX bindex_height_unique_btree on bindex(height);
 
 CREATE TABLE txindex(
   txhash bytea not null,
