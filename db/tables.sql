@@ -20,7 +20,7 @@ CREATE INDEX txindex_txhash_btree on txindex (txhash);
 
 -- outdata
 --
--- 1 - 8: nextaddr
+-- 1 - 8: address
 -- 9 - 9: unspent: 0x01, spent: 0x02
 -- 10 - 17: out value
 -- 18 - 25: next tx hash
