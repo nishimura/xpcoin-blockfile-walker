@@ -117,13 +117,18 @@ if ($prevLastPos !== 0){
 
         if (!$first){
             if ($prevHash !== $data['hashPrev']){
-                throw new Exception('not match prev hash: todo rollback');
+                echo 'not match prev hash: '
+                    . bin2hex($prevHash) . ':'
+                    . bin2hex($data['hashPrev']);
+                return rollbackBlocks($nHeight);
             }
 
-            if ($prevHashNext !== $curHash)
-                throw new Exception('hash not match: '
-                                    . bin2hex($prevHashNext) . ':'
-                                    . bin2hex($curHash));
+            if ($prevHashNext !== $curHash){
+                echo 'hash not match: '
+                    . bin2hex($prevHashNext) . ':'
+                    . bin2hex($curHash);
+                return rollbackBlocks($nHeight);
+            }
 
         }
         $first = false;
@@ -142,6 +147,61 @@ function readInt32(&$str)
 function query($query, $params){
     global $db;
     return $db->prepare($query)->execute($params);
+}
+
+function rollbackBlocks($height)
+{
+    global $db, $bdb, $packIndex;
+
+    $db->beginTransaction();
+    $query = 'select bhash, height, nfile, npos from bindex where height >= '
+           . $height . ' order by height desc';
+    $stmt = $db->prepare($query);
+    $stmt->bindColumn(1, $bhash);
+    $stmt->bindColumn(2, $nHeight, PDO::PARAM_INT);
+    $stmt->bindColumn(3, $nFile, PDO::PARAM_INT);
+    $stmt->bindColumn(4, $nPos, PDO::PARAM_INT);
+    $stmt->execute();
+
+    echo "\nrollback:\n";
+    while ($_ = $stmt->fetch(PDO::FETCH_BOUND)){
+        echo 'height:bindex=' . $nHeight, ':', bin2hex($bhash), "\n";
+
+        $block = Xp\Block::fromBinary([$nFile, $nPos + 8]);
+        $vtx = $block->values['vtx'];
+
+        foreach ($vtx as $tx){
+            $vin = $tx->values['vin'];
+            if (!isset($vin['coinbase'])){
+                foreach ($vin as $k => $v){
+                    // TODO: rollback transaction
+                    throw new Exception('TODO: rollback transactions');
+                }
+            }
+
+            $st = $db->prepare('DELETE FROM txindex where txhash = ?');
+            $txhash = toByteaDb(strrev($tx->values['txid']));
+            $st->bindValue(1, $txhash, PDO::PARAM_LOB);
+            $st->execute();
+            if (($c = $st->rowCount()) !== 1)
+                throw new Exception('Delete tx failed:' . bin2hex($txhash));
+
+            echo '  delete tx: ' . bin2hex($txhash) . "\n";
+        }
+
+        $st = $db->prepare('DELETE FROM bindex where bhash = ?');
+        $st->bindValue(1, $bhash, PDO::PARAM_LOB);
+        $st->execute();
+        if (($c = $st->rowCount()) !== 1)
+            throw new Exception('Delete tx failed:' . bin2hex($txhash));
+        echo "delete bindex\n";
+    }
+
+    //
+    // show message
+    //
+    $db->commit();
+    echo "rollback done;\n";
 }
 
 function readDiskBlock($value)
