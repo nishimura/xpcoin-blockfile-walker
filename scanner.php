@@ -178,6 +178,7 @@ END;
         $block = Xp\Block::fromBinary([$nFile, $nPos + 8]);
         $vtx = $block->values['vtx'];
 
+        $willDeleteTxs = [];
         foreach ($vtx as $tx){
             $txhash = toByteaDb(strrev($tx->values['txid']));
             $vin = $tx->values['vin'];
@@ -205,6 +206,10 @@ END;
                 }
             }
 
+            $willDeleteTxs[] = $txhash;
+        }
+
+        foreach ($willDeleteTxs as $txhash){
             $st = $db->prepare('DELETE FROM txindex where txhash = ?');
             $st->bindValue(1, $txhash, PDO::PARAM_LOB);
             $st->execute();
@@ -218,7 +223,7 @@ END;
         $st->bindValue(1, $bhash, PDO::PARAM_LOB);
         $st->execute();
         if (($c = $st->rowCount()) !== 1)
-            throw new Exception('Delete tx failed:' . bin2hex($txhash));
+            throw new Exception('Delete block failed:' . bin2hex($bhash));
         echo "delete bindex\n";
     }
 
