@@ -6,6 +6,11 @@ use Xpcoin\BlockFileWalker\Config;
 
 class Filter
 {
+    public static function toLink($str)
+    {
+        return '<a href="?q=' . $str . '">' . $str . '</a>';
+    }
+
     public static function toHashLink($str)
     {
         $str = $str . '';
@@ -20,7 +25,7 @@ class Filter
         if (!$hit)
             return $str;
 
-        return '<a href="?q=' . $str . '">' . $str . '</a>';
+        return self::toLink($str);
     }
 
     public static function toAmount($str)

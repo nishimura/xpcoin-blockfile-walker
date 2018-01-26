@@ -30,8 +30,8 @@ class App
         $p->query = $query;
         $p->address = null;
 
-        if ($query === null){
-            $p->blocks = $this->queryHeight();
+        if (strlen($query) === 0 || preg_match('/^[1-9][0-9]{0,7}$/', $query)){
+            $p->blocks = $this->queryHeight($query);
             $p->txs = [];
             return $this;
         }
@@ -71,6 +71,9 @@ class App
         $tmpl->addBehavior('l',
                            'Xpcoin\BlockFileWalker\Presenter\Filter::toHashLink',
                            true);
+        $tmpl->addBehavior('L',
+                           'Xpcoin\BlockFileWalker\Presenter\Filter::toLink',
+                           true);
         $tmpl->addBehavior('a',
                            'Xpcoin\BlockFileWalker\Presenter\Filter::toAmount');
         $tmpl->setFile('index.html')->show($params);
@@ -86,10 +89,15 @@ class App
         }
     }
 
-    private function queryHeight($limit = 100)
+    private function queryHeight($query, $limit = 100)
     {
+        if ($query){
+            $where = ' where height <= ' . (int)$query;
+        }else{
+            $where = '';
+        }
         $pdo = Config::getPdo();
-        $sql = 'select bhash from bindex order by height desc limit ' . $limit;
+        $sql = "select bhash from bindex $where order by height desc limit $limit";
 
         $prefix = packStr('blockindex');
 

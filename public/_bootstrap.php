@@ -33,12 +33,14 @@ function blocksView($blocks){
         $o = new \stdClass;
         $p = $block->toPresenter();
         $cols = [
-            'hash', 'nHeight', 'nMint', 'nMoneySupply', 'nFlags',
+            'nMint', 'nMoneySupply', 'nFlags',
             'nVersion', 'hashNext', 'hashPrev', 'nTime', 'nBits', 'nNonce',
             'nStakeModifier',
             'prevoutStake.hash', 'prevoutStake.n', 'nStakeTime',
             'hashProofOfStake',
         ];
+        $o->hash = $p->hash;
+        $o->nHeight = $p->nHeight;
         $o->data = new \stdClass();
         foreach ($cols as $col){
             if (isset($p->$col))

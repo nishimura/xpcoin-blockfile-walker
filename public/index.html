@@ -17,11 +17,13 @@
         <input type="text" name="q">
         <input type="submit">
       </form>
+      <div class="content" laiz:if="query">
+        query: {query}
+      </div>
     </div>
 
     <div laiz:if="address">
       <div class="content">
-        <div>{address}</div>
         <div>limit 1024 transactions</div>
         <div laiz:if="FULL_LINK">
           These transactions are including only unspent.
@@ -48,6 +50,15 @@
                 </div>
               </td>
             </tr>
+            <tr>
+              <th>hash &nbsp;</th>
+              <td>{block.hash:l}</td>
+            </tr>
+            <tr>
+              <th>nHeight &nbsp;</th>
+              <td>{block.nHeight:L}</td>
+            </tr>
+
             <tr laiz:loop="block.data:k:v">
               <th>{k} &nbsp;</th>
               <td>{v:l}</td>
